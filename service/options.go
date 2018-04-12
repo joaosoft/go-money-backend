@@ -1,45 +1,22 @@
-package golog
+package goaccount
 
 import (
-	"io"
-
-	"github.com/joaosoft/go-writer/service"
+	logger "github.com/joaosoft/go-log/service"
 )
 
-// GoLogOption ...
-type GoLogOption func(golog *GoLog)
+// GoAccountOption ...
+type GoAccountOption func(goaccount *GoAccount)
 
 // Reconfigure ...
-func (golog *GoLog) Reconfigure(options ...GoLogOption) {
+func (goaccount *GoAccount) Reconfigure(options ...GoAccountOption) {
 	for _, option := range options {
-		option(golog)
-	}
-}
-
-// WithWriter ...
-func WithWriter(writer io.Writer) GoLogOption {
-	return func(golog *GoLog) {
-		golog.writer = writer
-	}
-}
-
-// WithSpecialWriter ...
-func WithSpecialWriter(writer ISpecialWriter) GoLogOption {
-	return func(golog *GoLog) {
-		golog.specialWriter = writer
+		option(goaccount)
 	}
 }
 
 // WithLevel ...
-func WithLevel(level Level) GoLogOption {
-	return func(golog *GoLog) {
-		golog.level = level
-	}
-}
-
-// WithFormatHandler ...
-func WithFormatHandler(formatHandler gowriter.FormatHandler) GoLogOption {
-	return func(golog *GoLog) {
-		golog.formatHandler = formatHandler
+func WithLevel(level logger.Level) GoAccountOption {
+	return func(goaccount *GoAccount) {
+		log.SetLevel(level)
 	}
 }

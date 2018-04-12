@@ -23,4 +23,8 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/joaosoft/go-writer"
+  name = "github.com/joaosoft/go-log"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/joaosoft/go-manager"
