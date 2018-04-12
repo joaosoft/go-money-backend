@@ -1,4 +1,4 @@
-package goaccount
+package gomoney
 
 import (
 	"net/http"

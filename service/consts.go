@@ -1,3 +1,3 @@
-package goaccount
+package gomoney
 
 const ()

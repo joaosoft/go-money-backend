@@ -1,5 +1,5 @@
-# go-account
-[![Build Status](https://travis-ci.org/joaosoft/go-account.svg?branch=master)](https://travis-ci.org/joaosoft/go-account) | [![codecov](https://codecov.io/gh/joaosoft/go-account/branch/master/graph/badge.svg)](https://codecov.io/gh/joaosoft/go-account) | [![Go Report Card](https://goreportcard.com/badge/github.com/joaosoft/go-account)](https://goreportcard.com/report/github.com/joaosoft/go-account) | [![GoDoc](https://godoc.org/github.com/joaosoft/go-account?status.svg)](https://godoc.org/github.com/joaosoft/go-account/service)
+# go-money
+[![Build Status](https://travis-ci.org/joaosoft/go-money.svg?branch=master)](https://travis-ci.org/joaosoft/go-money) | [![codecov](https://codecov.io/gh/joaosoft/go-money/branch/master/graph/badge.svg)](https://codecov.io/gh/joaosoft/go-money) | [![Go Report Card](https://goreportcard.com/badge/github.com/joaosoft/go-money)](https://goreportcard.com/report/github.com/joaosoft/go-money) | [![GoDoc](https://godoc.org/github.com/joaosoft/go-money?status.svg)](https://godoc.org/github.com/joaosoft/go-money/service)
 
 A project that allows you to manage your day-to-day expenses.
 
@@ -15,11 +15,11 @@ Project dependencies are managed using Dep. Read more about [Dep](https://github
 
 >### Go
 ```
-go get github.com/joaosoft/go-account/service
+go get github.com/joaosoft/go-money/service
 ```
 
 ## Usage 
-This examples are available in the project at [go-account/bin/launcher/main.go](https://github.com/joaosoft/go-account/tree/master/bin/launcher/main.go)
+This examples are available in the project at [go-money/bin/launcher/main.go](https://github.com/joaosoft/go-money/tree/master/bin/launcher/main.go)
 
 ```go
 
