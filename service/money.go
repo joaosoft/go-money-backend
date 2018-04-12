@@ -35,6 +35,7 @@ func NewGoMoney(options ...GoMoneyOption) *GoMoney {
 	return money
 }
 
+// Start ...
 func (api *GoMoney) Start() error {
 	apiWeb := newApiWeb(api.config.Host)
 	api.pm.AddWeb("api_web", apiWeb.init())
@@ -42,6 +43,7 @@ func (api *GoMoney) Start() error {
 	return api.pm.Start()
 }
 
+// Stop ...
 func (api *GoMoney) Stop() error {
 	return api.pm.Stop()
 }
