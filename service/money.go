@@ -1,6 +1,8 @@
 package gomoney
 
 import (
+	"fmt"
+
 	"github.com/joaosoft/go-log/service"
 	"github.com/joaosoft/go-manager/service"
 )
@@ -15,7 +17,7 @@ type GoMoney struct {
 func NewGoMoney(options ...GoMoneyOption) *GoMoney {
 	// load configuration file
 	configApp := &AppConfig{}
-	if _, err := readFile("./config/app.json", configApp); err != nil {
+	if _, err := readFile(fmt.Sprintf("./config/app.%s.json", getEnv()), configApp); err != nil {
 		log.Error(err)
 	} else {
 		level, _ := golog.ParseLevel(configApp.Log.Level)
@@ -23,19 +25,19 @@ func NewGoMoney(options ...GoMoneyOption) *GoMoney {
 		WithLogLevel(level)
 	}
 
-	account := &GoMoney{
+	money := &GoMoney{
 		pm:     gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false)),
 		config: configApp,
 	}
 
-	account.Reconfigure(options...)
+	money.Reconfigure(options...)
 
-	return account
+	return money
 }
 
 func (api *GoMoney) Start() error {
-	webApi := newApiWeb(api.pm, api.config.Host)
-	webApi.Init()
+	apiWeb := newApiWeb(api.config.Host)
+	api.pm.AddWeb("api_web", apiWeb.init())
 
 	return api.pm.Start()
 }

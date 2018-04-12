@@ -10,27 +10,27 @@ import (
 // apiWeb ...
 type apiWeb struct {
 	host string
-	pm   *gomanager.GoManager
 }
 
 // newApiWeb ...
-func newApiWeb(pm *gomanager.GoManager, host string) *apiWeb {
-	return &apiWeb{
+func newApiWeb(host string) *apiWeb {
+	webApi := &apiWeb{
 		host: host,
-		pm:   pm,
 	}
+
+	return webApi
 }
 
-func (api *apiWeb) Init() error {
+func (api *apiWeb) init() gomanager.IWeb {
 	web := gomanager.NewSimpleWebEcho(api.host)
+
 	web.AddRoute("GET", "/user/:id", api.getAccountHandler)
-	web.AddRoute("POST", "/expenses", api.createAccountHandler)
-	web.AddRoute("GET", "/expenses/:id", api.getAccountHandler)
-	web.AddRoute("POST", "/expenses", api.createAccountHandler)
+	web.AddRoute("POST", "/money", api.createAccountHandler)
 
-	api.pm.AddWeb("web_account", web)
+	web.AddRoute("GET", "/money/:id", api.getAccountHandler)
+	web.AddRoute("POST", "/money", api.createAccountHandler)
 
-	return nil
+	return web
 }
 
 func (api *apiWeb) getAccountHandler(ctx echo.Context) error {
