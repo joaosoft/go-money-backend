@@ -14,8 +14,8 @@ func (gomoney *GoMoney) Reconfigure(options ...GoMoneyOption) {
 	}
 }
 
-// WithLevel ...
-func WithLevel(level logger.Level) GoMoneyOption {
+// WithLogLevel ...
+func WithLogLevel(level logger.Level) GoMoneyOption {
 	return func(gomoney *GoMoney) {
 		log.SetLevel(level)
 	}

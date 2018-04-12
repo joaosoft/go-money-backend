@@ -1,35 +1,45 @@
 package gomoney
 
 import (
+	"github.com/joaosoft/go-log/service"
 	"github.com/joaosoft/go-manager/service"
 )
 
 // GoMoney ...
 type GoMoney struct {
-	pm *gomanager.GoManager
+	pm     *gomanager.GoManager
+	config *AppConfig
 }
 
 // NewGoMoney ...
 func NewGoMoney(options ...GoMoneyOption) *GoMoney {
-	account := &GoMoney{
-		pm: gomanager.NewManager(gomanager.WithLogger(log)),
+	// load configuration file
+	configApp := &AppConfig{}
+	if _, err := readFile("./config/app.json", configApp); err != nil {
+		log.Error(err)
+	} else {
+		level, _ := golog.ParseLevel(configApp.Log.Level)
+		log.Debugf("setting log level to %s", level)
+		WithLogLevel(level)
 	}
+
+	account := &GoMoney{
+		pm:     gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false)),
+		config: configApp,
+	}
+
 	account.Reconfigure(options...)
 
 	return account
 }
 
-func (gomoney *GoMoney) Start() {
-	handler := newHandler(gomoney.pm)
-	web := gomanager.NewSimpleWebEcho("8080")
-	web.AddRoute("GET", "/user/:id", handler.getAccountHandler)
-	web.AddRoute("POST", "/expenses", handler.createAccountHandler)
-	web.AddRoute("GET", "/expenses/:id", handler.getAccountHandler)
-	web.AddRoute("POST", "/expenses", handler.createAccountHandler)
+func (api *GoMoney) Start() error {
+	webApi := newApiWeb(api.pm, api.config.Host)
+	webApi.Init()
 
-	gomoney.pm.AddWeb("web_account", web)
+	return api.pm.Start()
 }
 
-func (service *GoMoney) Stop() {
-	service.Stop()
+func (api *GoMoney) Stop() error {
+	return api.pm.Stop()
 }
