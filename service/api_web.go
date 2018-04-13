@@ -21,7 +21,7 @@ func newApiWeb(host string) *apiWeb {
 	return webApi
 }
 
-func (api *apiWeb) init() gomanager.IWeb {
+func (api *apiWeb) new() gomanager.IWeb {
 	web := gomanager.NewSimpleWebEcho(api.host)
 
 	web.AddRoute("GET", "/user/:id", api.getAccountHandler)
