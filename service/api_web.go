@@ -9,13 +9,15 @@ import (
 
 // apiWeb ...
 type apiWeb struct {
-	host string
+	host       string
+	interactor *Interactor
 }
 
 // newApiWeb ...
-func newApiWeb(host string) *apiWeb {
+func newApiWeb(host string, interactor *Interactor) *apiWeb {
 	webApi := &apiWeb{
-		host: host,
+		host:       host,
+		interactor: interactor,
 	}
 
 	return webApi
@@ -25,7 +27,7 @@ func (api *apiWeb) new() gomanager.IWeb {
 	web := gomanager.NewSimpleWebEcho(api.host)
 
 	web.AddRoute("GET", "/user/:id", api.getAccountHandler)
-	web.AddRoute("POST", "/money", api.createAccountHandler)
+	web.AddRoute("POST", "/user", api.createAccountHandler)
 
 	web.AddRoute("GET", "/money/:id", api.getAccountHandler)
 	web.AddRoute("POST", "/money", api.createAccountHandler)

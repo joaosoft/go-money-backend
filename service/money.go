@@ -9,12 +9,13 @@ import (
 
 // GoMoney ...
 type GoMoney struct {
-	pm     *gomanager.GoManager
-	config *AppConfig
+	interactor *Interactor
+	pm         *gomanager.GoManager
+	config     *AppConfig
 }
 
 // NewGoMoney ...
-func NewGoMoney(options ...GoMoneyOption) *GoMoney {
+func NewGoMoney(options ...GoMoneyOption) (*GoMoney, error) {
 	// load configuration file
 	configApp := &AppConfig{}
 	if _, err := readFile(fmt.Sprintf("./config/app.%s.json", getEnv()), configApp); err != nil {
@@ -25,19 +26,24 @@ func NewGoMoney(options ...GoMoneyOption) *GoMoney {
 		WithLogLevel(level)
 	}
 
+	conn, err := configApp.Db.Connect()
+	if err != nil {
+		return nil, err
+	}
 	money := &GoMoney{
-		pm:     gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false)),
-		config: configApp,
+		interactor: NewInteractor(NewStorage(conn)),
+		pm:         gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false)),
+		config:     configApp,
 	}
 
 	money.Reconfigure(options...)
 
-	return money
+	return money, nil
 }
 
 // Start ...
 func (api *GoMoney) Start() error {
-	apiWeb := newApiWeb(api.config.Host)
+	apiWeb := newApiWeb(api.config.Host, api.interactor)
 	api.pm.AddWeb("api_web", apiWeb.new())
 
 	return api.pm.Start()

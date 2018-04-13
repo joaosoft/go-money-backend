@@ -2,5 +2,9 @@
   "log": {
     "level": "info"
   },
-  "host": ":8080"
+  "host": ":8080",
+  "db": {
+    "driver": "postgres",
+    "datasource": "postgres://user:password@localhost:7001?sslmode=disable"
+  }
 }

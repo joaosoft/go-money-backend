@@ -23,25 +23,25 @@
   branch = "master"
   name = "github.com/joaosoft/go-log"
   packages = ["service"]
-  revision = "37e11b869dd153481d3adf02560d648146cdb973"
+  revision = "45ce849cea86a5181f8f865edf3d33694ab5c3a0"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-manager"
   packages = ["service"]
-  revision = "3c09a8d611c620428bc8888e096a3eab66ae4ad9"
+  revision = "ee2535ac380d5df535e59f82e5b1dc47af673c4b"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-writer"
   packages = ["service"]
-  revision = "c64d4869484c55797eb81ab5500395a162dc8b2b"
+  revision = "03b024de562bdef1b632537ae5918aa17dc3c505"
 
 [[projects]]
   name = "github.com/labstack/echo"
   packages = ["."]
-  revision = "a5d81b8d4a627f3f49dcb3164ef2bb5239682227"
-  version = "3.3.4"
+  revision = "6d227dfea4d2e52cb76856120b3c17f758139b4e"
+  version = "3.3.5"
 
 [[projects]]
   name = "github.com/labstack/gommon"
@@ -101,11 +101,11 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+  revision = "f6f352972f061230a99fbf49d1eb8073ebdb36cb"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "84324ae127a5ad26d9f48f49e75f2961fab2365347a412d995ace17c0cef9909"
+  inputs-digest = "5f81759af5b89b39b822a9fdc22f7ab0b12e723360cbffa5c65d22b0c8def522"
   solver-name = "gps-cdcl"
   solver-version = 1
