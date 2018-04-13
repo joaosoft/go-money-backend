@@ -1,3 +1,5 @@
 package gomoney
 
-const ()
+const (
+	defaultPath = "."
+)

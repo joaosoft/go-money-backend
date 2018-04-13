@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/joaosoft/go-log/service"
+
+	_ "github.com/go-sql-driver/mysql" // mysql driver
+	_ "github.com/lib/pq"              // postgres driver
 )
 
 var log = golog.NewLogDefault("go-money", golog.InfoLevel)
@@ -13,8 +16,12 @@ func main() {
 	start := time.Now()
 	//
 	// money
-	app := gomoney.NewGoMoney()
-	app.Start()
+	app, err := gomoney.NewGoMoney()
+	if err != nil {
+		log.Error(err)
+	} else {
+		app.Start()
+	}
 
 	elapsed := time.Since(start)
 	log.Infof("ELAPSED TIME: %s", elapsed)

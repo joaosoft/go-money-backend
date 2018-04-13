@@ -5,6 +5,6 @@
   "host": ":8080",
   "db": {
     "driver": "postgres",
-    "datasource": "postgres://user:password@localhost:7001?sslmode=disable"
+    "datasource": "postgres://user:password@localhost:5432?sslmode=disable"
   }
 }
