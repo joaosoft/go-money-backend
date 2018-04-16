@@ -16,24 +16,25 @@ type GoMoney struct {
 
 // NewGoMoney ...
 func NewGoMoney(options ...GoMoneyOption) (*GoMoney, error) {
+	pm := gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false))
+
 	// load configuration file
-	configApp := &AppConfig{}
-	if _, err := readFile(fmt.Sprintf("/config/app.%s.json", getEnv()), configApp); err != nil {
-		log.Error(err)
+	appConfig := &AppConfig{}
+	if simpleConfig, err := gomanager.NewSimpleConfig(fmt.Sprintf("/config/app.%s.json", getEnv()), appConfig); err != nil {
+		log.Error(err.Error())
 	} else {
-		level, _ := golog.ParseLevel(configApp.Log.Level)
+		pm.AddConfig("config_app", simpleConfig)
+		level, _ := golog.ParseLevel(appConfig.Log.Level)
 		log.Debugf("setting log level to %s", level)
 		WithLogLevel(level)
 	}
+	simpleDB := gomanager.NewSimpleDB(&appConfig.Db)
+	pm.AddDB("db_postgres", simpleDB)
 
-	conn, err := configApp.Db.Connect()
-	if err != nil {
-		return nil, err
-	}
 	money := &GoMoney{
-		interactor: NewInteractor(NewStorage(conn)),
-		pm:         gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false)),
-		config:     configApp,
+		interactor: NewInteractor(NewStorage(simpleDB), appConfig),
+		pm:         pm,
+		config:     appConfig,
 	}
 
 	money.Reconfigure(options...)
