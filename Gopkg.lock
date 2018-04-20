@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/joaosoft/go-log"
   packages = ["service"]
-  revision = "45ce849cea86a5181f8f865edf3d33694ab5c3a0"
+  revision = "a8e63f4191c6e93bfaf2d3ad238e535c23609424"
 
 [[projects]]
   branch = "master"
@@ -167,7 +167,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "2281fa97ef7b0c26324634d5a22f04babdac8713"
+  revision = "3ccc7e5779793fd54564baf60c51bf017955e0ba"
 
 [[projects]]
   name = "golang.org/x/text"

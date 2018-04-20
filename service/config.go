@@ -4,8 +4,8 @@ import (
 	"github.com/joaosoft/go-manager/service"
 )
 
-// AppConfig ...
-type AppConfig struct {
+// appConfig ...
+type appConfig struct {
 	Log struct {
 		Level string `json:"level"`
 	} `json:"log"`

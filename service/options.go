@@ -4,19 +4,19 @@ import (
 	logger "github.com/joaosoft/go-log/service"
 )
 
-// GoMoneyOption ...
-type GoMoneyOption func(gomoney *GoMoney)
+// goMoneyOption ...
+type goMoneyOption func(gomoney *goMoney)
 
-// Reconfigure ...
-func (gomoney *GoMoney) Reconfigure(options ...GoMoneyOption) {
+// reconfigure ...
+func (gomoney *goMoney) reconfigure(options ...goMoneyOption) {
 	for _, option := range options {
 		option(gomoney)
 	}
 }
 
 // WithLogLevel ...
-func WithLogLevel(level logger.Level) GoMoneyOption {
-	return func(gomoney *GoMoney) {
+func WithLogLevel(level logger.Level) goMoneyOption {
+	return func(gomoney *goMoney) {
 		log.SetLevel(level)
 	}
 }

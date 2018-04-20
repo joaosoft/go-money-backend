@@ -7,19 +7,19 @@ import (
 	"github.com/joaosoft/go-manager/service"
 )
 
-// GoMoney ...
-type GoMoney struct {
-	interactor *Interactor
+// goMoney ...
+type goMoney struct {
+	interactor *interactor
 	pm         *gomanager.GoManager
-	config     *AppConfig
+	config     *appConfig
 }
 
 // NewGoMoney ...
-func NewGoMoney(options ...GoMoneyOption) (*GoMoney, error) {
+func NewGoMoney(options ...goMoneyOption) (*goMoney, error) {
 	pm := gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false))
 
 	// load configuration file
-	appConfig := &AppConfig{}
+	appConfig := &appConfig{}
 	if simpleConfig, err := gomanager.NewSimpleConfig(fmt.Sprintf("/config/app.%s.json", getEnv()), appConfig); err != nil {
 		log.Error(err.Error())
 	} else {
@@ -31,19 +31,19 @@ func NewGoMoney(options ...GoMoneyOption) (*GoMoney, error) {
 	simpleDB := gomanager.NewSimpleDB(&appConfig.Db)
 	pm.AddDB("db_postgres", simpleDB)
 
-	money := &GoMoney{
-		interactor: NewInteractor(NewStorage(simpleDB), appConfig),
+	money := &goMoney{
+		interactor: newInteractor(newStoragePostgres(simpleDB), appConfig),
 		pm:         pm,
 		config:     appConfig,
 	}
 
-	money.Reconfigure(options...)
+	money.reconfigure(options...)
 
 	return money, nil
 }
 
 // Start ...
-func (api *GoMoney) Start() error {
+func (api *goMoney) Start() error {
 	apiWeb := newApiWeb(api.config.Host, api.interactor)
 	api.pm.AddWeb("api_web", apiWeb.new())
 
@@ -51,6 +51,6 @@ func (api *GoMoney) Start() error {
 }
 
 // Stop ...
-func (api *GoMoney) Stop() error {
+func (api *goMoney) Stop() error {
 	return api.pm.Stop()
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// User ...
-type User struct {
+// user ...
+type user struct {
 	UserID      uuid.UUID
 	Name        string
 	Email       string
@@ -18,10 +18,34 @@ type User struct {
 	CreatedAt   time.Time
 }
 
-// Transaction ...
-type Transaction struct {
+// wallet ...
+type wallet struct {
+	WalletID    uuid.UUID
+	UserID      uuid.UUID
+	Name        string
+	Description string
+	Password    string
+	UpdatedAt   time.Time
+	CreatedAt   time.Time
+}
+
+// image ...
+type image struct {
+	ImageID     uuid.UUID
+	UserID      uuid.UUID
+	Name        string
+	Description string
+	Url         string
+	RawImage    []byte
+	UpdatedAt   time.Time
+	CreatedAt   time.Time
+}
+
+// transaction ...
+type transaction struct {
 	TransactionID uuid.UUID
 	UserID        uuid.UUID
+	WalletID      uuid.UUID
 	CategoryID    uuid.UUID
 	Price         decimal.Decimal
 	Description   string
@@ -30,10 +54,13 @@ type Transaction struct {
 	CreatedAt     time.Time
 }
 
-// Category ...
-type Category struct {
-	UserID      uuid.UUID
+// category ...
+type category struct {
 	CategoryID  uuid.UUID
+	UserID      uuid.UUID
+	ImageID     uuid.UUID
 	Name        string
 	Description string
+	UpdatedAt   time.Time
+	CreatedAt   time.Time
 }
