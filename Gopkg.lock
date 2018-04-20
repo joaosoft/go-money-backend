@@ -33,15 +33,21 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/joaosoft/go-error"
+  packages = ["service"]
+  revision = "b4e0aab88a369100b50f185e3eceb0dacf238296"
+
+[[projects]]
+  branch = "master"
   name = "github.com/joaosoft/go-log"
   packages = ["service"]
-  revision = "a8e63f4191c6e93bfaf2d3ad238e535c23609424"
+  revision = "5ede5d381ee45d5b0a944053c51e9d981b82dd19"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-manager"
   packages = ["service"]
-  revision = "eb4d92320e5484c746016b45a318966d54c4fd08"
+  revision = "2a6b93b1b1a43a06fe22d0ec7f3e21f67e082196"
 
 [[projects]]
   branch = "master"
@@ -161,13 +167,13 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert"]
-  revision = "d6449816ce06963d9d136eee5a56fca5b0616e7e"
+  revision = "e73bf333ef8920dbb52ad18d4bd38ad9d9bc76d7"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "3ccc7e5779793fd54564baf60c51bf017955e0ba"
+  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -190,6 +196,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "99f1ee3994ea31b0d6120656f675312ca67ba6089281edcceede89b6048fab2d"
+  inputs-digest = "ffe93717d3c1b35bdbfb1c7750614ac29499cf48d9d580cfb1e15b9b1906c08f"
   solver-name = "gps-cdcl"
   solver-version = 1

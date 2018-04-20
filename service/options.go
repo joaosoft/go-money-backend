@@ -1,7 +1,7 @@
 package gomoney
 
 import (
-	logger "github.com/joaosoft/go-log/service"
+	"github.com/joaosoft/go-log/service"
 )
 
 // goMoneyOption ...
@@ -15,7 +15,7 @@ func (gomoney *goMoney) reconfigure(options ...goMoneyOption) {
 }
 
 // WithLogLevel ...
-func WithLogLevel(level logger.Level) goMoneyOption {
+func WithLogLevel(level golog.Level) goMoneyOption {
 	return func(gomoney *goMoney) {
 		log.SetLevel(level)
 	}
