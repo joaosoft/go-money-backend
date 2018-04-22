@@ -35,25 +35,25 @@
   branch = "master"
   name = "github.com/joaosoft/go-error"
   packages = ["service"]
-  revision = "b4e0aab88a369100b50f185e3eceb0dacf238296"
+  revision = "a44e27c13ad9fed6a8a813e8e6f8251768581404"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-log"
   packages = ["service"]
-  revision = "5ede5d381ee45d5b0a944053c51e9d981b82dd19"
+  revision = "5e0cf5053972ae001a8c5e7a626b812fc71725ea"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-manager"
   packages = ["service"]
-  revision = "2a6b93b1b1a43a06fe22d0ec7f3e21f67e082196"
+  revision = "a1fe290f802c0a7d0a6c0ab294cbefc39157ebb3"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-writer"
   packages = ["service"]
-  revision = "03b024de562bdef1b632537ae5918aa17dc3c505"
+  revision = "5916e348a3faa57e172332068979b8376c0e496a"
 
 [[projects]]
   name = "github.com/labstack/echo"

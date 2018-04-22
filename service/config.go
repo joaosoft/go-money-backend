@@ -6,6 +6,11 @@ import (
 
 // appConfig ...
 type appConfig struct {
+	GoMoney goMoneyConfig `json:"gomoney"`
+}
+
+// goMoneyConfig ...
+type goMoneyConfig struct {
 	Log struct {
 		Level string `json:"level"`
 	} `json:"log"`

@@ -11,12 +11,12 @@ import (
 type goMoney struct {
 	interactor *interactor
 	pm         *gomanager.GoManager
-	config     *appConfig
+	config     *goMoneyConfig
 }
 
 // NewGoMoney ...
 func NewGoMoney(options ...goMoneyOption) (*goMoney, error) {
-	pm := gomanager.NewManager(gomanager.WithLogger(log), gomanager.WithRunInBackground(false))
+	pm := gomanager.NewManager(gomanager.WithRunInBackground(false))
 
 	// load configuration file
 	appConfig := &appConfig{}
@@ -24,17 +24,17 @@ func NewGoMoney(options ...goMoneyOption) (*goMoney, error) {
 		log.Error(err.Error())
 	} else {
 		pm.AddConfig("config_app", simpleConfig)
-		level, _ := golog.ParseLevel(appConfig.Log.Level)
+		level, _ := golog.ParseLevel(appConfig.GoMoney.Log.Level)
 		log.Debugf("setting log level to %s", level)
 		WithLogLevel(level)
 	}
-	simpleDB := gomanager.NewSimpleDB(&appConfig.Db)
+	simpleDB := gomanager.NewSimpleDB(&appConfig.GoMoney.Db)
 	pm.AddDB("db_postgres", simpleDB)
 
 	money := &goMoney{
 		interactor: newInteractor(newStoragePostgres(simpleDB), appConfig),
 		pm:         pm,
-		config:     appConfig,
+		config:     &appConfig.GoMoney,
 	}
 
 	money.reconfigure(options...)

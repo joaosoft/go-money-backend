@@ -5,6 +5,8 @@ import (
 
 	"time"
 
+	"fmt"
+
 	"github.com/joaosoft/go-error/service"
 	"github.com/joaosoft/go-manager/service"
 	"github.com/labstack/echo"
@@ -80,11 +82,11 @@ type walletResponse struct {
 // IMAGES
 type createImagesRequest struct {
 	UserID string `json:"user_id" validate:"nonzero"`
-	Body   []struct {
+	Body   struct {
 		Name        string `json:"name" validate:"nonzero"`
 		Description string `json:"description" validate:"nonzero"`
 		Url         string `json:"url"`
-		RawImage    []byte `json:"raw_image"`
+		ImageKey    string `json:"image_key"`
 	} `json:"images" validate:"min=1"`
 }
 
@@ -95,7 +97,7 @@ type updateImageRequest struct {
 		Name        string `json:"name" validate:"nonzero"`
 		Description string `json:"description"`
 		Url         string `json:"url"`
-		RawImage    []byte `json:"raw_image"`
+		ImageKey    string `json:"image_key"`
 	} `json:"body"`
 }
 
@@ -207,7 +209,7 @@ func (api *apiWeb) new() gomanager.IWeb {
 	// images
 	web.AddRoute("GET", "/users/:user_id/images", api.getImagesHandler)
 	web.AddRoute("GET", "/users/:user_id/images/:image_id", api.getImageHandler)
-	web.AddRoute("POST", "/users/:user_id/images", api.createImagesHandler)
+	web.AddRoute("POST", "/users/:user_id/images", api.createImageHandler)
 	web.AddRoute("PUT", "/users/:user_id/images/:image_id", api.updateImageHandler)
 	web.AddRoute("DELETE", "/users/:user_id/images/:image_id", api.deleteImageHandler)
 
@@ -658,26 +660,23 @@ func (api *apiWeb) getImageHandler(ctx echo.Context) error {
 	}
 }
 
-func (api *apiWeb) createImagesHandler(ctx echo.Context) error {
+func (api *apiWeb) createImageHandler(ctx echo.Context) error {
 	request := createImagesRequest{
 		UserID: ctx.Param("user_id"),
 	}
-	images := make([]*image, 0)
 
-	if err := ctx.Bind(&request.Body); err != nil {
+	// form values
+	request.Body.Name = ctx.FormValue("name")
+	request.Body.Description = ctx.FormValue("description")
+	request.Body.Url = ctx.FormValue("url")
+	request.Body.ImageKey = "image"
+
+	fmt.Print("%+v", request)
+	if err := validator.Validate(request.Body); err != nil {
 		newErr := goerror.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
+			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
-	}
-
-	for _, item := range request.Body {
-		if err := validator.Validate(item); err != nil {
-			newErr := goerror.NewError(err)
-			log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-				Error("error when validating body request").ToErrorData(newErr)
-			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
-		}
 	}
 
 	userID, err := uuid.FromString(request.UserID)
@@ -688,23 +687,31 @@ func (api *apiWeb) createImagesHandler(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
-	for _, item := range request.Body {
-		images = append(images, &image{
-			UserID:      userID,
-			Name:        item.Name,
-			Description: item.Description,
-			Url:         item.Url,
-			RawImage:    item.RawImage,
-		})
-	}
-
-	if createdImages, err := api.interactor.createImages(images); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+	if buffers, err := download(request.Body.ImageKey, ctx); err != nil {
+		newErr := goerror.NewError(err)
+		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
+			Error("error uploading images").ToErrorData(newErr)
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	} else {
-		imagesResponse := make([]*imageResponse, 0)
+		if len(buffers) == 0 {
+			newErr := goerror.FromString("there is no file in the request")
+			log.Error(newErr.Error())
+			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		}
+		image := &image{
+			UserID:      userID,
+			Name:        request.Body.Name,
+			Description: request.Body.Description,
+			Url:         request.Body.Url,
+			RawImage:    buffers[0].Bytes(),
+		}
 
-		for _, createdImage := range createdImages {
-			imageResponse := &imageResponse{
+		buffers[0].Write(image.RawImage)
+
+		if createdImage, err := api.interactor.createImage(image); err != nil {
+			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		} else {
+			return ctx.JSON(http.StatusCreated, &imageResponse{
 				ImageID:     createdImage.ImageID.String(),
 				UserID:      createdImage.UserID.String(),
 				Name:        createdImage.Name,
@@ -713,10 +720,8 @@ func (api *apiWeb) createImagesHandler(ctx echo.Context) error {
 				RawImage:    createdImage.RawImage,
 				CreatedAt:   createdImage.CreatedAt.String(),
 				UpdatedAt:   createdImage.UpdatedAt.String(),
-			}
-			imagesResponse = append(imagesResponse, imageResponse)
+			})
 		}
-		return ctx.JSON(http.StatusCreated, imagesResponse)
 	}
 }
 
@@ -725,12 +730,12 @@ func (api *apiWeb) updateImageHandler(ctx echo.Context) error {
 		UserID:  ctx.Param("user_id"),
 		ImageID: ctx.Param("image_id"),
 	}
-	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
-	}
+
+	// form values
+	request.Body.Name = ctx.FormValue("name")
+	request.Body.Description = ctx.FormValue("description")
+	request.Body.Url = ctx.FormValue("url")
+	request.Body.ImageKey = ctx.FormValue("image_key")
 
 	if err := validator.Validate(request.Body); err != nil {
 		newErr := goerror.NewError(err)
@@ -755,29 +760,43 @@ func (api *apiWeb) updateImageHandler(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
-	if updatedImage, err := api.interactor.updateImage(
-		&image{
+	if buffers, err := download(request.Body.ImageKey, ctx); err != nil {
+		newErr := goerror.NewError(err)
+		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
+			Error("error uploading images").ToErrorData(newErr)
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+	} else {
+		if len(buffers) == 0 {
+			newErr := goerror.FromString("there is no file in the request")
+			log.Error(newErr.Error())
+			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		}
+		image := &image{
 			ImageID:     imageID,
 			UserID:      userID,
 			Name:        request.Body.Name,
 			Description: request.Body.Description,
 			Url:         request.Body.Url,
-			RawImage:    request.Body.RawImage,
-		}); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
-	} else if updatedImage == nil {
-		return ctx.NoContent(http.StatusNotFound)
-	} else {
-		return ctx.JSON(http.StatusCreated, imageResponse{
-			ImageID:     updatedImage.ImageID.String(),
-			UserID:      updatedImage.UserID.String(),
-			Name:        updatedImage.Name,
-			Description: updatedImage.Description,
-			Url:         updatedImage.Url,
-			RawImage:    updatedImage.RawImage,
-			CreatedAt:   updatedImage.CreatedAt.String(),
-			UpdatedAt:   updatedImage.UpdatedAt.String(),
-		})
+			RawImage:    buffers[0].Bytes(),
+		}
+		buffers[0].Write(image.RawImage)
+
+		if updatedImage, err := api.interactor.updateImage(image); err != nil {
+			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		} else if updatedImage == nil {
+			return ctx.NoContent(http.StatusNotFound)
+		} else {
+			return ctx.JSON(http.StatusCreated, imageResponse{
+				ImageID:     updatedImage.ImageID.String(),
+				UserID:      updatedImage.UserID.String(),
+				Name:        updatedImage.Name,
+				Description: updatedImage.Description,
+				Url:         updatedImage.Url,
+				RawImage:    updatedImage.RawImage,
+				CreatedAt:   updatedImage.CreatedAt.String(),
+				UpdatedAt:   updatedImage.UpdatedAt.String(),
+			})
+		}
 	}
 }
 

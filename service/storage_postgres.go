@@ -371,50 +371,17 @@ func (storage *storagePostgres) getImage(userID uuid.UUID, imageID uuid.UUID) (*
 	return image, nil
 }
 
-// createImages ...
-func (storage *storagePostgres) createImages(newImages []*image) ([]*image, *goerror.ErrorData) {
-	tx, err := storage.conn.Get().Begin()
-	if err != nil {
-		tx.Rollback()
+// createImage ...
+func (storage *storagePostgres) createImage(newImage *image) (*image, *goerror.ErrorData) {
+	if result, err := storage.conn.Get().Exec(`
+		INSERT INTO money.images(image_id, user_id, name, description, url, raw_image)
+		VALUES($1, $2, $3, $4, $5, $6)
+	`, newImage.ImageID.String(), newImage.UserID.String(), newImage.Name, newImage.Description, newImage.Url, newImage.RawImage); err != nil {
 		return nil, goerror.NewError(err)
+	} else if rows, _ := result.RowsAffected(); rows > 0 {
+		return storage.getImage(newImage.UserID, newImage.ImageID)
 	}
-
-	stmt, errItem := tx.Prepare(pq.CopyInSchema("money", "images", "image_id", "user_id", "name", "description", "url", "raw_image"))
-	if errItem != nil {
-		tx.Rollback()
-		return nil, goerror.NewError(err)
-	}
-
-	for _, newImage := range newImages {
-		if _, err := stmt.Exec(newImage.ImageID.String(), newImage.UserID.String(), newImage.Name, newImage.Description, newImage.Url, newImage.RawImage); err != nil {
-			tx.Rollback()
-			return nil, goerror.NewError(err)
-		}
-	}
-
-	if _, err := stmt.Exec(); err != nil {
-		tx.Rollback()
-		return nil, goerror.NewError(err)
-	}
-
-	if err := stmt.Close(); err != nil {
-		tx.Rollback()
-		return nil, goerror.NewError(err)
-	}
-
-	tx.Commit()
-
-	// get created images
-	createdImages := make([]*image, 0)
-	for _, newImage := range newImages {
-		image, err := storage.getImage(newImage.UserID, newImage.ImageID)
-		if err != nil {
-			return nil, goerror.NewError(err)
-		}
-		createdImages = append(createdImages, image)
-	}
-
-	return createdImages, nil
+	return nil, nil
 }
 
 // updateImage ...

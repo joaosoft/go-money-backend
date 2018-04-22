@@ -21,7 +21,7 @@ type iStorage interface {
 
 	getImages(userID uuid.UUID) ([]*image, *goerror.ErrorData)
 	getImage(userID uuid.UUID, imageID uuid.UUID) (*image, *goerror.ErrorData)
-	createImages(newImage []*image) ([]*image, *goerror.ErrorData)
+	createImage(newImage *image) (*image, *goerror.ErrorData)
 	updateImage(updImage *image) (*image, *goerror.ErrorData)
 	deleteImage(userID uuid.UUID, imageID uuid.UUID) *goerror.ErrorData
 
@@ -205,6 +205,7 @@ func (interactor *interactor) getImages(userID uuid.UUID) ([]*image, *goerror.Er
 func (interactor *interactor) getImage(userID uuid.UUID, imageID uuid.UUID) (*image, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getImage"})
 	log.Infof("getting image %s of user %s", imageID.String(), userID.String())
+
 	if image, err := interactor.storage.getImage(userID, imageID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
 			Errorf("error getting image on storage %s", err).ToErrorData(err)
@@ -214,21 +215,19 @@ func (interactor *interactor) getImage(userID uuid.UUID, imageID uuid.UUID) (*im
 	}
 }
 
-// createImages ...
-func (interactor *interactor) createImages(newImages []*image) ([]*image, *goerror.ErrorData) {
-	log.WithFields(map[string]interface{}{"method": "createImages"})
+// createImage ...
+func (interactor *interactor) createImage(newImage *image) (*image, *goerror.ErrorData) {
+	log.WithFields(map[string]interface{}{"method": "createImage"})
 
-	log.Info("creating images")
-	for _, image := range newImages {
-		image.ImageID = uuid.NewV4()
-	}
+	log.Info("creating image")
+	newImage.ImageID = uuid.NewV4()
 
-	if images, err := interactor.storage.createImages(newImages); err != nil {
+	if image, err := interactor.storage.createImage(newImage); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error creating images on storage %s", err).ToErrorData(err)
+			Errorf("error creating image on storage %s", err).ToErrorData(err)
 		return nil, err
 	} else {
-		return images, nil
+		return image, nil
 	}
 }
 

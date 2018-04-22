@@ -1,10 +1,30 @@
 {
-  "log": {
-    "level": "info"
+  "gomoney": {
+    "log": {
+      "level": "info"
+    },
+    "host": ":8080",
+    "db": {
+      "driver": "postgres",
+      "datasource": "postgres://user:password@localhost:5432?sslmode=disable"
+    }
   },
-  "host": ":8080",
-  "db": {
-    "driver": "postgres",
-    "datasource": "postgres://user:password@localhost:5432?sslmode=disable"
+  "godropbox": {
+    "log": {
+      "level": "info"
+    },
+    "authorization": {
+      "access": "Bearer",
+      "token": "XPTO"
+    },
+    "hosts": {
+      "api": "https://api.dropboxapi.com/2",
+      "content": "https://content.dropboxapi.com/2"
+    }
+  },
+  "gomanager": {
+    "log": {
+      "level": "info"
+    }
   }
 }
