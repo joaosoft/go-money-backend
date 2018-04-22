@@ -299,6 +299,8 @@ func (storage *storagePostgres) getImages(userID uuid.UUID) ([]*image, *goerror.
 			name,
 			description,
 			url,
+			file_name,
+			format,
 			raw_image,
 			updated_at,
 			created_at
@@ -321,6 +323,8 @@ func (storage *storagePostgres) getImages(userID uuid.UUID) ([]*image, *goerror.
 			&image.Name,
 			&image.Description,
 			&image.Url,
+			&image.FileName,
+			&image.Format,
 			&image.RawImage,
 			&image.UpdatedAt,
 			&image.CreatedAt); err != nil {
@@ -343,6 +347,8 @@ func (storage *storagePostgres) getImage(userID uuid.UUID, imageID uuid.UUID) (*
 			name,
 			description,
 			url,
+			file_name,
+			format,
 			raw_image,
 			updated_at,
 			created_at
@@ -358,6 +364,8 @@ func (storage *storagePostgres) getImage(userID uuid.UUID, imageID uuid.UUID) (*
 		&image.Name,
 		&image.Description,
 		&image.Url,
+		&image.FileName,
+		&image.Format,
 		&image.RawImage,
 		&image.UpdatedAt,
 		&image.CreatedAt); err != nil {
@@ -374,9 +382,9 @@ func (storage *storagePostgres) getImage(userID uuid.UUID, imageID uuid.UUID) (*
 // createImage ...
 func (storage *storagePostgres) createImage(newImage *image) (*image, *goerror.ErrorData) {
 	if result, err := storage.conn.Get().Exec(`
-		INSERT INTO money.images(image_id, user_id, name, description, url, raw_image)
-		VALUES($1, $2, $3, $4, $5, $6)
-	`, newImage.ImageID.String(), newImage.UserID.String(), newImage.Name, newImage.Description, newImage.Url, newImage.RawImage); err != nil {
+		INSERT INTO money.images(image_id, user_id, name, description, url, file_name, format, raw_image)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+	`, newImage.ImageID.String(), newImage.UserID.String(), newImage.Name, newImage.Description, newImage.Url, newImage.FileName, newImage.Format, newImage.RawImage); err != nil {
 		return nil, goerror.NewError(err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getImage(newImage.UserID, newImage.ImageID)
@@ -391,9 +399,11 @@ func (storage *storagePostgres) updateImage(updImage *image) (*image, *goerror.E
 			name = $1,
 			description = $2,
 			url = $3,
-			raw_image = $4
-		WHERE user_id = $5 AND image_id = $6
-	`, updImage.Name, updImage.Description, updImage.Url, updImage.RawImage, updImage.UserID.String(), updImage.ImageID.String()); err != nil {
+			file_name = $4,
+			format = $5,
+			raw_image = $6
+		WHERE user_id = $7 AND image_id = $8
+	`, updImage.Name, updImage.Description, updImage.Url, updImage.FileName, updImage.Format, updImage.RawImage, updImage.UserID.String(), updImage.ImageID.String()); err != nil {
 		return nil, goerror.NewError(err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getImage(updImage.UserID, updImage.ImageID)

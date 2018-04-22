@@ -1,12 +1,14 @@
 package gomoney
 
 import (
+	"fmt"
+
 	"github.com/joaosoft/go-error/service"
 	"github.com/satori/go.uuid"
 )
 
-// iStorage ...
-type iStorage interface {
+// iStorageDB ...
+type iStorageDB interface {
 	getUsers() ([]*user, *goerror.ErrorData)
 	getUser(userID uuid.UUID) (*user, *goerror.ErrorData)
 	createUser(newUser *user) (*user, *goerror.ErrorData)
@@ -38,17 +40,26 @@ type iStorage interface {
 	deleteTransaction(userID uuid.UUID, walletID uuid.UUID, transactionID uuid.UUID) *goerror.ErrorData
 }
 
+// iStorageDropbox ...
+type iStorageDropbox interface {
+	upload(path string, data []byte) *goerror.ErrorData
+	download(path string) ([]byte, *goerror.ErrorData)
+	delete(path string) *goerror.ErrorData
+}
+
 // interactor ...
 type interactor struct {
-	storage iStorage
-	config  *appConfig
+	storageDB      iStorageDB
+	storageDropbox iStorageDropbox
+	config         *appConfig
 }
 
 // newInteractor ...
-func newInteractor(repository iStorage, config *appConfig) *interactor {
+func newInteractor(storageDB iStorageDB, storageDropbox iStorageDropbox, config *appConfig) *interactor {
 	return &interactor{
-		storage: repository,
-		config:  config,
+		storageDB:      storageDB,
+		storageDropbox: storageDropbox,
+		config:         config,
 	}
 }
 
@@ -56,9 +67,9 @@ func newInteractor(repository iStorage, config *appConfig) *interactor {
 func (interactor *interactor) getUsers() ([]*user, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getUsers"})
 	log.Info("getting users")
-	if users, err := interactor.storage.getUsers(); err != nil {
+	if users, err := interactor.storageDB.getUsers(); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting users on storage %s", err).ToErrorData(err)
+			Errorf("error getting users on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return users, nil
@@ -69,9 +80,9 @@ func (interactor *interactor) getUsers() ([]*user, *goerror.ErrorData) {
 func (interactor *interactor) getUser(userID uuid.UUID) (*user, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getUser"})
 	log.Infof("getting user %s", userID.String())
-	if user, err := interactor.storage.getUser(userID); err != nil {
+	if user, err := interactor.storageDB.getUser(userID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting user on storage %s", err).ToErrorData(err)
+			Errorf("error getting user on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return user, nil
@@ -85,9 +96,9 @@ func (interactor *interactor) createUser(newUser *user) (*user, *goerror.ErrorDa
 	newUser.UserID = uuid.NewV4()
 	log.Infof("creating user %s", newUser.UserID.String())
 
-	if user, err := interactor.storage.createUser(newUser); err != nil {
+	if user, err := interactor.storageDB.createUser(newUser); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error creating user on storage %s", err).ToErrorData(err)
+			Errorf("error creating user on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return user, nil
@@ -98,9 +109,9 @@ func (interactor *interactor) createUser(newUser *user) (*user, *goerror.ErrorDa
 func (interactor *interactor) updateUser(updUser *user) (*user, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "updateUser"})
 	log.Infof("updating user %s", updUser.UserID.String())
-	if user, err := interactor.storage.updateUser(updUser); err != nil {
+	if user, err := interactor.storageDB.updateUser(updUser); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error updating user on storage %s", err).ToErrorData(err)
+			Errorf("error updating user on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return user, nil
@@ -111,9 +122,9 @@ func (interactor *interactor) updateUser(updUser *user) (*user, *goerror.ErrorDa
 func (interactor *interactor) deleteUser(userID uuid.UUID) *goerror.ErrorData {
 	log.WithFields(map[string]interface{}{"method": "deleteUser"})
 	log.Infof("deleting user %s", userID.String())
-	if err := interactor.storage.deleteUser(userID); err != nil {
+	if err := interactor.storageDB.deleteUser(userID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error deleting user on storage %s", err).ToErrorData(err)
+			Errorf("error deleting user on storage database %s", err).ToErrorData(err)
 		return err
 	}
 	return nil
@@ -123,9 +134,9 @@ func (interactor *interactor) deleteUser(userID uuid.UUID) *goerror.ErrorData {
 func (interactor *interactor) getWallets(userID uuid.UUID) ([]*wallet, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getWallets"})
 	log.Infof("getting wallets of user %s", userID.String())
-	if wallets, err := interactor.storage.getWallets(userID); err != nil {
+	if wallets, err := interactor.storageDB.getWallets(userID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting wallets on storage %s", err).ToErrorData(err)
+			Errorf("error getting wallets on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return wallets, nil
@@ -136,9 +147,9 @@ func (interactor *interactor) getWallets(userID uuid.UUID) ([]*wallet, *goerror.
 func (interactor *interactor) getWallet(userID uuid.UUID, walletID uuid.UUID) (*wallet, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getWallet"})
 	log.Infof("getting wallet %s of user %s", walletID.String(), userID.String())
-	if wallet, err := interactor.storage.getWallet(userID, walletID); err != nil {
+	if wallet, err := interactor.storageDB.getWallet(userID, walletID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting wallet on storage %s", err).ToErrorData(err)
+			Errorf("error getting wallet on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return wallet, nil
@@ -154,9 +165,9 @@ func (interactor *interactor) createWallets(newWallets []*wallet) ([]*wallet, *g
 		wallet.WalletID = uuid.NewV4()
 	}
 
-	if wallets, err := interactor.storage.createWallets(newWallets); err != nil {
+	if wallets, err := interactor.storageDB.createWallets(newWallets); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error creating wallets on storage %s", err).ToErrorData(err)
+			Errorf("error creating wallets on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return wallets, nil
@@ -167,9 +178,9 @@ func (interactor *interactor) createWallets(newWallets []*wallet) ([]*wallet, *g
 func (interactor *interactor) updateWallet(updWallet *wallet) (*wallet, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "updateWallet"})
 	log.Infof("updating wallet %s of user %s", updWallet.UserID.String(), updWallet.UserID.String())
-	if wallet, err := interactor.storage.updateWallet(updWallet); err != nil {
+	if wallet, err := interactor.storageDB.updateWallet(updWallet); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error updating wallet on storage %s", err).ToErrorData(err)
+			Errorf("error updating wallet on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return wallet, nil
@@ -180,9 +191,9 @@ func (interactor *interactor) updateWallet(updWallet *wallet) (*wallet, *goerror
 func (interactor *interactor) deleteWallet(userID uuid.UUID, walletID uuid.UUID) *goerror.ErrorData {
 	log.WithFields(map[string]interface{}{"method": "deleteWallet"})
 	log.Infof("deleting wallet %s of user %s", walletID.String(), userID.String())
-	if err := interactor.storage.deleteWallet(userID, walletID); err != nil {
+	if err := interactor.storageDB.deleteWallet(userID, walletID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error deleting wallet on storage %s", err).ToErrorData(err)
+			Errorf("error deleting wallet on storage database %s", err).ToErrorData(err)
 		return err
 	}
 	return nil
@@ -192,9 +203,9 @@ func (interactor *interactor) deleteWallet(userID uuid.UUID, walletID uuid.UUID)
 func (interactor *interactor) getImages(userID uuid.UUID) ([]*image, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getImages"})
 	log.Infof("getting images of user %s", userID.String())
-	if images, err := interactor.storage.getImages(userID); err != nil {
+	if images, err := interactor.storageDB.getImages(userID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting images on storage %s", err).ToErrorData(err)
+			Errorf("error getting images on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return images, nil
@@ -206,9 +217,9 @@ func (interactor *interactor) getImage(userID uuid.UUID, imageID uuid.UUID) (*im
 	log.WithFields(map[string]interface{}{"method": "getImage"})
 	log.Infof("getting image %s of user %s", imageID.String(), userID.String())
 
-	if image, err := interactor.storage.getImage(userID, imageID); err != nil {
+	if image, err := interactor.storageDB.getImage(userID, imageID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting image on storage %s", err).ToErrorData(err)
+			Errorf("error getting image on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return image, nil
@@ -222,11 +233,18 @@ func (interactor *interactor) createImage(newImage *image) (*image, *goerror.Err
 	log.Info("creating image")
 	newImage.ImageID = uuid.NewV4()
 
-	if image, err := interactor.storage.createImage(newImage); err != nil {
+	if image, err := interactor.storageDB.createImage(newImage); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error creating image on storage %s", err).ToErrorData(err)
+			Errorf("error creating image on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
+		path := fmt.Sprintf("/users/%s/images/%s.%s", newImage.UserID.String(), newImage.ImageID.String(), newImage.Format)
+		if err := interactor.storageDropbox.upload(path, newImage.RawImage); err != nil {
+			log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+				Errorf("error creating image on storage dropbox %s", err).ToErrorData(err)
+			return nil, err
+		}
+
 		return image, nil
 	}
 }
@@ -235,11 +253,17 @@ func (interactor *interactor) createImage(newImage *image) (*image, *goerror.Err
 func (interactor *interactor) updateImage(updImage *image) (*image, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "updateImage"})
 	log.Infof("updating image %s of user %s", updImage.UserID.String(), updImage.UserID.String())
-	if image, err := interactor.storage.updateImage(updImage); err != nil {
+	if image, err := interactor.storageDB.updateImage(updImage); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error updating image on storage %s", err).ToErrorData(err)
+			Errorf("error updating image on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
+		path := fmt.Sprintf("/users/%s/images/%s", updImage.UserID.String(), updImage.ImageID.String())
+		if err := interactor.storageDropbox.upload(path, updImage.RawImage); err != nil {
+			log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+				Errorf("error updating image on storage dropbox %s", err).ToErrorData(err)
+			return nil, err
+		}
 		return image, nil
 	}
 }
@@ -248,10 +272,17 @@ func (interactor *interactor) updateImage(updImage *image) (*image, *goerror.Err
 func (interactor *interactor) deleteImage(userID uuid.UUID, imageID uuid.UUID) *goerror.ErrorData {
 	log.WithFields(map[string]interface{}{"method": "deleteImage"})
 	log.Infof("deleting image %s of user %s", imageID.String(), userID.String())
-	if err := interactor.storage.deleteImage(userID, imageID); err != nil {
+	if err := interactor.storageDB.deleteImage(userID, imageID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error deleting image on storage %s", err).ToErrorData(err)
+			Errorf("error deleting image on storage database %s", err).ToErrorData(err)
 		return err
+	} else {
+		path := fmt.Sprintf("/users/%s/images/%s", userID, imageID)
+		if err := interactor.storageDropbox.delete(path); err != nil {
+			log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+				Errorf("error deleting image on storage dropbox %s", err).ToErrorData(err)
+			return err
+		}
 	}
 	return nil
 }
@@ -260,9 +291,9 @@ func (interactor *interactor) deleteImage(userID uuid.UUID, imageID uuid.UUID) *
 func (interactor *interactor) getCategories(userID uuid.UUID) ([]*category, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getCategories"})
 	log.Infof("getting categories of user %s", userID.String())
-	if categories, err := interactor.storage.getCategories(userID); err != nil {
+	if categories, err := interactor.storageDB.getCategories(userID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting categories on storage %s", err).ToErrorData(err)
+			Errorf("error getting categories on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return categories, nil
@@ -273,9 +304,9 @@ func (interactor *interactor) getCategories(userID uuid.UUID) ([]*category, *goe
 func (interactor *interactor) getCategory(userID uuid.UUID, categoryID uuid.UUID) (*category, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getCategory"})
 	log.Infof("getting category %s of user %s", categoryID.String(), userID.String())
-	if category, err := interactor.storage.getCategory(userID, categoryID); err != nil {
+	if category, err := interactor.storageDB.getCategory(userID, categoryID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting category on storage %s", err).ToErrorData(err)
+			Errorf("error getting category on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return category, nil
@@ -291,9 +322,9 @@ func (interactor *interactor) createCategories(newCategories []*category) ([]*ca
 		category.CategoryID = uuid.NewV4()
 	}
 
-	if categories, err := interactor.storage.createCategories(newCategories); err != nil {
+	if categories, err := interactor.storageDB.createCategories(newCategories); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error creating categories on storage %s", err).ToErrorData(err)
+			Errorf("error creating categories on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return categories, nil
@@ -304,9 +335,9 @@ func (interactor *interactor) createCategories(newCategories []*category) ([]*ca
 func (interactor *interactor) updateCategory(updCategory *category) (*category, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "updateCategory"})
 	log.Infof("updating category %s of user %s", updCategory.UserID.String(), updCategory.UserID.String())
-	if category, err := interactor.storage.updateCategory(updCategory); err != nil {
+	if category, err := interactor.storageDB.updateCategory(updCategory); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error updating category on storage %s", err).ToErrorData(err)
+			Errorf("error updating category on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return category, nil
@@ -317,9 +348,9 @@ func (interactor *interactor) updateCategory(updCategory *category) (*category, 
 func (interactor *interactor) deleteCategory(userID uuid.UUID, categoryID uuid.UUID) *goerror.ErrorData {
 	log.WithFields(map[string]interface{}{"method": "deleteCategory"})
 	log.Infof("deleting category %s of user %s", categoryID.String(), userID.String())
-	if err := interactor.storage.deleteCategory(userID, categoryID); err != nil {
+	if err := interactor.storageDB.deleteCategory(userID, categoryID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error deleting category on storage %s", err).ToErrorData(err)
+			Errorf("error deleting category on storage database %s", err).ToErrorData(err)
 		return err
 	}
 	return nil
@@ -329,9 +360,9 @@ func (interactor *interactor) deleteCategory(userID uuid.UUID, categoryID uuid.U
 func (interactor *interactor) getTransactions(userID uuid.UUID) ([]*transaction, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getTransactions"})
 	log.Infof("getting transactions of user %s", userID.String())
-	if transaction, err := interactor.storage.getTransactions(userID); err != nil {
+	if transaction, err := interactor.storageDB.getTransactions(userID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting transactions on storage %s", err).ToErrorData(err)
+			Errorf("error getting transactions on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return transaction, nil
@@ -342,9 +373,9 @@ func (interactor *interactor) getTransactions(userID uuid.UUID) ([]*transaction,
 func (interactor *interactor) getTransaction(userID uuid.UUID, walletID uuid.UUID, transactionID uuid.UUID) (*transaction, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "getTransaction"})
 	log.Infof("getting transaction %s of user %s on wallet %s", transactionID.String(), userID.String(), walletID.String())
-	if transaction, err := interactor.storage.getTransaction(userID, walletID, transactionID); err != nil {
+	if transaction, err := interactor.storageDB.getTransaction(userID, walletID, transactionID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error getting transaction on storage %s", err).ToErrorData(err)
+			Errorf("error getting transaction on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return transaction, nil
@@ -360,9 +391,9 @@ func (interactor *interactor) createTransactions(newTransactions []*transaction)
 		transaction.TransactionID = uuid.NewV4()
 	}
 
-	if transactions, err := interactor.storage.createTransactions(newTransactions); err != nil {
+	if transactions, err := interactor.storageDB.createTransactions(newTransactions); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error creating transactions on storage %s", err).ToErrorData(err)
+			Errorf("error creating transactions on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return transactions, nil
@@ -373,9 +404,9 @@ func (interactor *interactor) createTransactions(newTransactions []*transaction)
 func (interactor *interactor) updateTransaction(updTransaction *transaction) (*transaction, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "updateTransaction"})
 	log.Infof("updating transaction %s of user %s", updTransaction.UserID.String(), updTransaction.UserID.String())
-	if transaction, err := interactor.storage.updateTransaction(updTransaction); err != nil {
+	if transaction, err := interactor.storageDB.updateTransaction(updTransaction); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error updating transaction on storage %s", err).ToErrorData(err)
+			Errorf("error updating transaction on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
 		return transaction, nil
@@ -386,9 +417,9 @@ func (interactor *interactor) updateTransaction(updTransaction *transaction) (*t
 func (interactor *interactor) deleteTransaction(userID uuid.UUID, walletID uuid.UUID, transactionID uuid.UUID) *goerror.ErrorData {
 	log.WithFields(map[string]interface{}{"method": "deleteTransaction"})
 	log.Infof("deleting transaction %s of user %s", transactionID.String(), userID.String())
-	if err := interactor.storage.deleteTransaction(userID, walletID, transactionID); err != nil {
+	if err := interactor.storageDB.deleteTransaction(userID, walletID, transactionID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-			Errorf("error deleting transaction on storage %s", err).ToErrorData(err)
+			Errorf("error deleting transaction on storage database %s", err).ToErrorData(err)
 		return err
 	}
 	return nil

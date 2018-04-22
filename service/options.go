@@ -1,22 +1,28 @@
 package gomoney
 
-import (
-	"github.com/joaosoft/go-log/service"
-)
+import "github.com/joaosoft/go-log/service"
 
-// goMoneyOption ...
-type goMoneyOption func(gomoney *goMoney)
+// moneyOption ...
+type moneyOption func(money *Money)
 
-// reconfigure ...
-func (gomoney *goMoney) reconfigure(options ...goMoneyOption) {
+// Reconfigure ...
+func (money *Money) Reconfigure(options ...moneyOption) {
 	for _, option := range options {
-		option(gomoney)
+		option(money)
+	}
+}
+
+// WithLogger ...
+func WithLogger(logger golog.ILog) moneyOption {
+	return func(manager *Money) {
+		log = logger
+		manager.isLogExternal = true
 	}
 }
 
 // WithLogLevel ...
-func WithLogLevel(level golog.Level) goMoneyOption {
-	return func(gomoney *goMoney) {
+func WithLogLevel(level golog.Level) moneyOption {
+	return func(money *Money) {
 		log.SetLevel(level)
 	}
 }

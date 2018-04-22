@@ -12,8 +12,13 @@ import (
 	"github.com/labstack/echo"
 )
 
-func download(key string, ctx echo.Context) ([]bytes.Buffer, *goerror.ErrorData) {
-	writers := make([]bytes.Buffer, 0)
+type downloadData struct {
+	FileName string
+	Data     bytes.Buffer
+}
+
+func download(key string, ctx echo.Context) ([]*downloadData, *goerror.ErrorData) {
+	downloads := make([]*downloadData, 0)
 
 	// multipart form
 	form, err := ctx.MultipartForm()
@@ -37,17 +42,21 @@ func download(key string, ctx echo.Context) ([]bytes.Buffer, *goerror.ErrorData)
 		// copy
 		dst.ReadFrom(src)
 
-		writers = append(writers, dst)
+		downloads = append(downloads,
+			&downloadData{
+				FileName: file.Filename,
+				Data:     dst,
+			})
 	}
 	log.Infof("uploaded successfully %d %s", len(files), key)
 
-	return writers, nil
+	return downloads, nil
 }
 
 func upload(client *http.Client, url string, values map[string]io.Reader) *goerror.ErrorData {
 	var b bytes.Buffer
 	var err error
-	writer := multipart.NewWriter(&b)
+	downloads := multipart.NewWriter(&b)
 
 	for key, value := range values {
 		var fw io.Writer
@@ -56,12 +65,12 @@ func upload(client *http.Client, url string, values map[string]io.Reader) *goerr
 		}
 		// Add an image file
 		if file, ok := value.(*os.File); ok {
-			if fw, err = writer.CreateFormFile(key, file.Name()); err != nil {
+			if fw, err = downloads.CreateFormFile(key, file.Name()); err != nil {
 				return goerror.NewError(err)
 			}
 		} else {
 			// Add other fields
-			if fw, err = writer.CreateFormField(key); err != nil {
+			if fw, err = downloads.CreateFormField(key); err != nil {
 				return goerror.NewError(err)
 			}
 		}
@@ -71,7 +80,7 @@ func upload(client *http.Client, url string, values map[string]io.Reader) *goerr
 
 	}
 	// close the multipart
-	writer.Close()
+	downloads.Close()
 
 	// now that you have a form, you can submit it to your handler.
 	req, err := http.NewRequest("POST", url, &b)
@@ -79,7 +88,7 @@ func upload(client *http.Client, url string, values map[string]io.Reader) *goerr
 		return goerror.NewError(err)
 	}
 	// don't forget to set the content type, this will contain the boundary.
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Content-Type", downloads.FormDataContentType())
 
 	// submit the request
 	res, err := client.Do(req)

@@ -7,16 +7,27 @@ import (
 	"github.com/joaosoft/go-manager/service"
 )
 
-// goMoney ...
-type goMoney struct {
-	interactor *interactor
-	pm         *gomanager.GoManager
-	config     *goMoneyConfig
+// Money ...
+type Money struct {
+	interactor    *interactor
+	pm            *gomanager.Manager
+	config        *goMoneyConfig
+	isLogExternal bool
 }
 
 // NewGoMoney ...
-func NewGoMoney(options ...goMoneyOption) (*goMoney, error) {
+func NewGoMoney(options ...moneyOption) (*Money, error) {
 	pm := gomanager.NewManager(gomanager.WithRunInBackground(false))
+
+	money := &Money{
+		pm: pm,
+	}
+
+	money.Reconfigure(options...)
+
+	if money.isLogExternal {
+		pm.Reconfigure(gomanager.WithLogger(log))
+	}
 
 	// load configuration file
 	appConfig := &appConfig{}
@@ -26,24 +37,23 @@ func NewGoMoney(options ...goMoneyOption) (*goMoney, error) {
 		pm.AddConfig("config_app", simpleConfig)
 		level, _ := golog.ParseLevel(appConfig.GoMoney.Log.Level)
 		log.Debugf("setting log level to %s", level)
-		WithLogLevel(level)
+		log.Reconfigure(golog.WithLevel(level))
 	}
+
 	simpleDB := gomanager.NewSimpleDB(&appConfig.GoMoney.Db)
-	pm.AddDB("db_postgres", simpleDB)
-
-	money := &goMoney{
-		interactor: newInteractor(newStoragePostgres(simpleDB), appConfig),
-		pm:         pm,
-		config:     &appConfig.GoMoney,
+	if err := pm.AddDB("db_postgres", simpleDB); err != nil {
+		log.Error(err.Error())
+		return nil, err
 	}
 
-	money.reconfigure(options...)
+	money.config = &appConfig.GoMoney
+	money.interactor = newInteractor(newStoragePostgres(simpleDB), newStorageDropbox(nil), appConfig)
 
 	return money, nil
 }
 
 // Start ...
-func (api *goMoney) Start() error {
+func (api *Money) Start() error {
 	apiWeb := newApiWeb(api.config.Host, api.interactor)
 	api.pm.AddWeb("api_web", apiWeb.new())
 
@@ -51,6 +61,6 @@ func (api *goMoney) Start() error {
 }
 
 // Stop ...
-func (api *goMoney) Stop() error {
+func (api *Money) Stop() error {
 	return api.pm.Stop()
 }

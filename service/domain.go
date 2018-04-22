@@ -36,6 +36,8 @@ type image struct {
 	Name        string
 	Description string
 	Url         string
+	FileName    string
+	Format      string
 	RawImage    []byte
 	UpdatedAt   time.Time
 	CreatedAt   time.Time

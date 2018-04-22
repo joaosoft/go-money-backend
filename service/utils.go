@@ -3,8 +3,15 @@ package gomoney
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
+	img "image"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"io/ioutil"
 	"os"
+
+	"golang.org/x/image/bmp"
 )
 
 func getEnv() string {
@@ -92,4 +99,52 @@ func writeFile(fileName string, obj interface{}) error {
 	}
 
 	return nil
+}
+
+func encodeImage(writer io.Writer, image img.Image, format string) (err error) {
+	switch format {
+	case "jpg":
+		var rgba *img.RGBA
+		if nrgba, ok := image.(*img.NRGBA); ok {
+			if nrgba.Opaque() {
+				rgba = &img.RGBA{
+					Pix:    nrgba.Pix,
+					Stride: nrgba.Stride,
+					Rect:   nrgba.Rect,
+				}
+			}
+			err = jpeg.Encode(writer, rgba, &jpeg.Options{Quality: 100})
+		}
+
+	case "jpeg":
+		err = jpeg.Encode(writer, image, &jpeg.Options{Quality: 100})
+
+	case "png":
+		err = png.Encode(writer, image)
+
+	case "bmp":
+		err = bmp.Encode(writer, image)
+
+	default:
+		err = fmt.Errorf("unknown format when writting %v", format)
+	}
+	return err
+}
+
+func decodeImage(reader io.Reader, format string) (image img.Image, err error) {
+
+	switch format {
+	case "jpg", "jpeg":
+		image, err = jpeg.Decode(reader)
+
+	case "png":
+		image, err = png.Decode(reader)
+
+	case "bmp":
+		image, err = bmp.Decode(reader)
+
+	default:
+		image, _, err = img.Decode(reader)
+	}
+	return image, err
 }

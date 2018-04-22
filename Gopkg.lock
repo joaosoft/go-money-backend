@@ -33,6 +33,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/joaosoft/go-dropbox"
+  packages = ["service"]
+  revision = "9ea9f35b1ff5d2bcc804171da9e4f12bcdecec33"
+
+[[projects]]
+  branch = "master"
   name = "github.com/joaosoft/go-error"
   packages = ["service"]
   revision = "a44e27c13ad9fed6a8a813e8e6f8251768581404"
@@ -41,13 +47,13 @@
   branch = "master"
   name = "github.com/joaosoft/go-log"
   packages = ["service"]
-  revision = "5e0cf5053972ae001a8c5e7a626b812fc71725ea"
+  revision = "bb80ed104841dee7e3cc38a161c28bffc3fd274e"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-manager"
   packages = ["service"]
-  revision = "a1fe290f802c0a7d0a6c0ab294cbefc39157ebb3"
+  revision = "f33d67b3121ef16230a7366ee4201a3075206709"
 
 [[projects]]
   branch = "master"
@@ -171,6 +177,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/image"
+  packages = ["bmp"]
+  revision = "f315e440302883054d0c2bd85486878cb4f8572c"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "79b0c6888797020a994db17c8510466c72fe75d9"
@@ -196,6 +208,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ffe93717d3c1b35bdbfb1c7750614ac29499cf48d9d580cfb1e15b9b1906c08f"
+  inputs-digest = "d3786b8399f3faeb377b154444e3fcf6dcfd2b9a93c23e14ba3dac61593f2127"
   solver-name = "gps-cdcl"
   solver-version = 1

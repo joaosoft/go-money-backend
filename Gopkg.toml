@@ -27,6 +27,10 @@
 
 [[constraint]]
   branch = "master"
+  name = "github.com/joaosoft/go-dropbox"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/joaosoft/go-error"
 
 [[constraint]]
@@ -52,6 +56,10 @@
 [[constraint]]
   name = "github.com/shopspring/decimal"
   version = "1.0.1"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/image"
 
 [[constraint]]
   branch = "v2"
