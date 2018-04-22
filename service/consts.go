@@ -2,6 +2,5 @@ package gomoney
 
 const (
 	defaultPath = "."
-
-	PATH_KEY = "path"
+	path_key    = "path"
 )

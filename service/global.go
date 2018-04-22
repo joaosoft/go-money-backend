@@ -8,5 +8,5 @@ var global = make(map[string]interface{})
 var log = golog.NewLogDefault("go-money", golog.InfoLevel)
 
 func init() {
-	global[PATH_KEY] = defaultPath
+	global[path_key] = defaultPath
 }
