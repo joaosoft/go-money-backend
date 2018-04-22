@@ -195,40 +195,40 @@ func (api *apiWeb) new() gomanager.IWeb {
 	web := gomanager.NewSimpleWebEcho(api.host)
 
 	// users
-	web.AddRoute("GET", "/users", api.getUsersHandler)
-	web.AddRoute("GET", "/users/:user_id", api.getUserHandler)
-	web.AddRoute("POST", "/users", api.createUserHandler)
-	web.AddRoute("PUT", "/users/:user_id", api.updateUserHandler)
-	web.AddRoute("DELETE", "/users/:user_id", api.deleteUserHandler)
+	web.AddRoute(http.MethodGet, "/users", api.getUsersHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id", api.getUserHandler)
+	web.AddRoute(http.MethodPost, "/users", api.createUserHandler)
+	web.AddRoute(http.MethodPut, "/users/:user_id", api.updateUserHandler)
+	web.AddRoute(http.MethodDelete, "/users/:user_id", api.deleteUserHandler)
 
 	// wallets
-	web.AddRoute("GET", "/users/:user_id/wallets", api.getWalletsHandler)
-	web.AddRoute("GET", "/users/:user_id/wallets/:wallet_id", api.getWalletHandler)
-	web.AddRoute("POST", "/users/:user_id/wallets", api.createWalletsHandler)
-	web.AddRoute("PUT", "/users/:user_id/wallets/:wallet_id", api.updateWalletHandler)
-	web.AddRoute("DELETE", "/users/:user_id/wallets/:wallet_id", api.deleteWalletHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/wallets", api.getWalletsHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/wallets/:wallet_id", api.getWalletHandler)
+	web.AddRoute(http.MethodPost, "/users/:user_id/wallets", api.createWalletsHandler)
+	web.AddRoute(http.MethodPut, "/users/:user_id/wallets/:wallet_id", api.updateWalletHandler)
+	web.AddRoute(http.MethodDelete, "/users/:user_id/wallets/:wallet_id", api.deleteWalletHandler)
 
 	// images
-	web.AddRoute("GET", "/users/:user_id/images", api.getImagesHandler)
-	web.AddRoute("GET", "/users/:user_id/images/:image_id", api.getImageHandler)
-	web.AddRoute("GET", "/users/:user_id/images/:image_id/raw", api.getImageRawHandler)
-	web.AddRoute("POST", "/users/:user_id/images", api.createImageHandler)
-	web.AddRoute("PUT", "/users/:user_id/images/:image_id", api.updateImageHandler)
-	web.AddRoute("DELETE", "/users/:user_id/images/:image_id", api.deleteImageHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/images", api.getImagesHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/images/:image_id", api.getImageHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/images/:image_id/raw", api.getImageRawHandler)
+	web.AddRoute(http.MethodPost, "/users/:user_id/images", api.createImageHandler)
+	web.AddRoute(http.MethodPut, "/users/:user_id/images/:image_id", api.updateImageHandler)
+	web.AddRoute(http.MethodDelete, "/users/:user_id/images/:image_id", api.deleteImageHandler)
 
 	// categories
-	web.AddRoute("GET", "/users/:user_id/categories", api.getCategoriesHandler)
-	web.AddRoute("GET", "/users/:user_id/categories/:category_id", api.getCategoryHandler)
-	web.AddRoute("POST", "/users/:user_id/categories", api.createCategoriesHandler)
-	web.AddRoute("PUT", "/users/:user_id/categories/:category_id", api.updateCategoryHandler)
-	web.AddRoute("DELETE", "/users/:user_id/categories/:category_id", api.deleteCategoryHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/categories", api.getCategoriesHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/categories/:category_id", api.getCategoryHandler)
+	web.AddRoute(http.MethodPost, "/users/:user_id/categories", api.createCategoriesHandler)
+	web.AddRoute(http.MethodPut, "/users/:user_id/categories/:category_id", api.updateCategoryHandler)
+	web.AddRoute(http.MethodDelete, "/users/:user_id/categories/:category_id", api.deleteCategoryHandler)
 
 	// transactions
-	web.AddRoute("GET", "/users/:user_id/wallets/:wallet_id/transactions", api.getTransactionsHandler)
-	web.AddRoute("GET", "/users/:user_id/wallets/:wallet_id/transactions/:transaction_id", api.getTransactionHandler)
-	web.AddRoute("POST", "/users/:user_id/wallets/:wallet_id/transactions", api.createTransactionsHandler)
-	web.AddRoute("PUT", "/users/:user_id/wallets/:wallet_id/transactions/:transaction_id", api.updateTransactionHandler)
-	web.AddRoute("DELETE", "/users/:user_id/wallets/:wallet_id/transactions/:transaction_id", api.deleteTransactionHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/wallets/:wallet_id/transactions", api.getTransactionsHandler)
+	web.AddRoute(http.MethodGet, "/users/:user_id/wallets/:wallet_id/transactions/:transaction_id", api.getTransactionHandler)
+	web.AddRoute(http.MethodPost, "/users/:user_id/wallets/:wallet_id/transactions", api.createTransactionsHandler)
+	web.AddRoute(http.MethodPut, "/users/:user_id/wallets/:wallet_id/transactions/:transaction_id", api.updateTransactionHandler)
+	web.AddRoute(http.MethodDelete, "/users/:user_id/wallets/:wallet_id/transactions/:transaction_id", api.deleteTransactionHandler)
 
 	return web
 }
