@@ -226,6 +226,21 @@ func (interactor *interactor) getImage(userID uuid.UUID, imageID uuid.UUID) (*im
 	}
 }
 
+// getImageRaw ...
+func (interactor *interactor) getImageRaw(userID uuid.UUID, imageID uuid.UUID) ([]byte, *goerror.ErrorData) {
+	log.WithFields(map[string]interface{}{"method": "getImage"})
+	log.Infof("getting rawImage %s of user %s", imageID.String(), userID.String())
+
+	path := fmt.Sprintf("/users/%s/images/%s", userID, imageID)
+	if rawImage, err := interactor.storageDropbox.download(path); err != nil {
+		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+			Errorf("error getting rawImage on storage dropbox %s", err).ToErrorData(err)
+		return nil, err
+	} else {
+		return rawImage, nil
+	}
+}
+
 // createImage ...
 func (interactor *interactor) createImage(newImage *image) (*image, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "createImage"})
@@ -238,7 +253,7 @@ func (interactor *interactor) createImage(newImage *image) (*image, *goerror.Err
 			Errorf("error creating image on storage database %s", err).ToErrorData(err)
 		return nil, err
 	} else {
-		path := fmt.Sprintf("/users/%s/images/%s.%s", newImage.UserID.String(), newImage.ImageID.String(), newImage.Format)
+		path := fmt.Sprintf("/users/%s/images/%s", newImage.UserID.String(), newImage.ImageID.String())
 		if err := interactor.storageDropbox.upload(path, newImage.RawImage); err != nil {
 			log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
 				Errorf("error creating image on storage dropbox %s", err).ToErrorData(err)

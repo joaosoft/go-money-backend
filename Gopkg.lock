@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/joaosoft/go-dropbox"
   packages = ["service"]
-  revision = "9ea9f35b1ff5d2bcc804171da9e4f12bcdecec33"
+  revision = "5d176c02e61279b60d91e85255b207bea30a9b43"
 
 [[projects]]
   branch = "master"
@@ -53,7 +53,7 @@
   branch = "master"
   name = "github.com/joaosoft/go-manager"
   packages = ["service"]
-  revision = "f33d67b3121ef16230a7366ee4201a3075206709"
+  revision = "5cc889dbf6d994009f8d587b7cb0d4ef51f17139"
 
 [[projects]]
   branch = "master"

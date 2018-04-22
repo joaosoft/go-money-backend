@@ -46,7 +46,7 @@ type userResponse struct {
 	Name        string `json:"name"`
 	Email       string `json:"email"`
 	Password    string `json:"password"`
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 	UpdatedAt   string `json:"updated_at"`
 	CreatedAt   string `json:"created_at"`
 }
@@ -73,8 +73,8 @@ type walletResponse struct {
 	WalletID    string `json:"wallet_id"`
 	UserID      string `json:"user_id"`
 	Name        string `json:"name"`
-	Description string `json:"description"`
-	Password    string `json:"password"`
+	Description string `json:"description,omitempty"`
+	Password    string `json:"password,omitempty"`
 	UpdatedAt   string `json:"updated_at"`
 	CreatedAt   string `json:"created_at"`
 }
@@ -104,14 +104,14 @@ type updateImageRequest struct {
 type imageResponse struct {
 	ImageID     string `json:"image_id"`
 	UserID      string `json:"user_id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Url         string `json:"url"`
-	FileName    string `json:"file_name"`
-	Format      string `json:"format"`
-	RawImage    []byte `json:"raw_image"`
-	UpdatedAt   string `json:"updated_at"`
-	CreatedAt   string `json:"created_at"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Url         string `json:"url,omitempty"`
+	FileName    string `json:"file_name,omitempty"`
+	Format      string `json:"format,omitempty"`
+	RawImage    []byte `json:"raw_image,omitempty"`
+	UpdatedAt   string `json:"updated_at,omitempty"`
+	CreatedAt   string `json:"created_at,omitempty"`
 }
 
 // CATEGORIES
@@ -129,14 +129,14 @@ type updateCategoryRequest struct {
 type categoryItemRequest struct {
 	Name        string `json:"name" validate:"nonzero"`
 	Description string `json:"description"`
-	ImageID     string `json:"image_id"`
+	ImageID     string `json:"image_id" validate:"nonzero"`
 }
 
 type categoryResponse struct {
 	CategoryID  string `json:"category_id"`
 	UserID      string `json:"user_id"`
 	Name        string `json:"name"`
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 	ImageID     string `json:"image_id"`
 	UpdatedAt   string `json:"updated_at"`
 	CreatedAt   string `json:"created_at"`
@@ -169,7 +169,7 @@ type transactionResponse struct {
 	TransactionID string `json:"transaction_id"`
 	CategoryID    string `json:"category_id"`
 	Price         string `json:"price"`
-	Description   string `json:"description"`
+	Description   string `json:"description,omitempty"`
 	Date          string `json:"date"`
 	UpdatedAt     string `json:"updated_at"`
 	CreatedAt     string `json:"created_at"`
@@ -211,6 +211,7 @@ func (api *apiWeb) new() gomanager.IWeb {
 	// images
 	web.AddRoute("GET", "/users/:user_id/images", api.getImagesHandler)
 	web.AddRoute("GET", "/users/:user_id/images/:image_id", api.getImageHandler)
+	web.AddRoute("GET", "/users/:user_id/images/:image_id/raw", api.getImageRawHandler)
 	web.AddRoute("POST", "/users/:user_id/images", api.createImageHandler)
 	web.AddRoute("PUT", "/users/:user_id/images/:image_id", api.updateImageHandler)
 	web.AddRoute("DELETE", "/users/:user_id/images/:image_id", api.deleteImageHandler)
@@ -663,6 +664,35 @@ func (api *apiWeb) getImageHandler(ctx echo.Context) error {
 				CreatedAt:   image.CreatedAt.String(),
 				UpdatedAt:   image.UpdatedAt.String(),
 			})
+	}
+}
+
+func (api *apiWeb) getImageRawHandler(ctx echo.Context) error {
+	userID, err := uuid.FromString(ctx.Param("user_id"))
+	if err != nil {
+		newErr := goerror.NewError(err)
+		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
+			Error("error getting user_id").ToErrorData(newErr)
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+	}
+	imageID, err := uuid.FromString(ctx.Param("image_id"))
+	if err != nil {
+		newErr := goerror.NewError(err)
+		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
+			Error("error getting image_id").ToErrorData(newErr)
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+	}
+
+	if rawImage, err := api.interactor.getImageRaw(userID, imageID); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+	} else if rawImage == nil {
+		return ctx.NoContent(http.StatusNotFound)
+	} else {
+		return ctx.JSON(http.StatusCreated, &imageResponse{
+			ImageID:  imageID.String(),
+			UserID:   userID.String(),
+			RawImage: rawImage,
+		})
 	}
 }
 
