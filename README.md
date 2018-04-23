@@ -4,7 +4,7 @@
 A project that allows you to manage your day-to-day expenses.
 
 ## Support for 
-* Dropbox image upload
+* Dropbox image upload and download
 * Postgres database
 
 ###### If i miss something or you have something interesting, please be part of this project. Let me know! My contact is at the end.
