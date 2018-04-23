@@ -47,6 +47,7 @@ func (storage *storagePostgres) getUsers() ([]*user, *goerror.ErrorData) {
 			&user.Name,
 			&user.Email,
 			&user.Password,
+			&user.PasswordHash,
 			&user.Description,
 			&user.UpdatedAt,
 			&user.CreatedAt); err != nil {
@@ -69,6 +70,7 @@ func (storage *storagePostgres) getUser(userID uuid.UUID) (*user, *goerror.Error
 		    name,
 			email,
 			password,
+			password_hash,
 			description,
 			updated_at,
 			created_at
@@ -81,6 +83,7 @@ func (storage *storagePostgres) getUser(userID uuid.UUID) (*user, *goerror.Error
 		&user.Name,
 		&user.Email,
 		&user.Password,
+		&user.PasswordHash,
 		&user.Description,
 		&user.UpdatedAt,
 		&user.CreatedAt); err != nil {
@@ -97,9 +100,9 @@ func (storage *storagePostgres) getUser(userID uuid.UUID) (*user, *goerror.Error
 // createUser ...
 func (storage *storagePostgres) createUser(newUser *user) (*user, *goerror.ErrorData) {
 	if result, err := storage.conn.Get().Exec(`
-		INSERT INTO money.users(user_id, name, email, password, description)
+		INSERT INTO money.users(user_id, name, email, password, password_hash, description)
 		VALUES($1, $2, $3, $4, $5)
-	`, newUser.UserID.String(), newUser.Name, newUser.Email, newUser.Password, newUser.Description); err != nil {
+	`, newUser.UserID.String(), newUser.Name, newUser.Email, newUser.Password, newUser.PasswordHash, newUser.Description); err != nil {
 		return nil, goerror.NewError(err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getUser(newUser.UserID)
@@ -115,9 +118,10 @@ func (storage *storagePostgres) updateUser(user *user) (*user, *goerror.ErrorDat
 			name = $1, 
 			email = $2, 
 			password = $3,
-			description = $4
-		WHERE user_id = $5
-	`, user.Name, user.Email, user.Password, user.Description, user.UserID.String()); err != nil {
+			password_hash = $4,
+			description = $5
+		WHERE user_id = $6
+	`, user.Name, user.Email, user.Password, user.PasswordHash, user.Description, user.UserID.String()); err != nil {
 		return nil, goerror.NewError(err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getUser(user.UserID)

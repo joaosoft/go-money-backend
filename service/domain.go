@@ -9,13 +9,14 @@ import (
 
 // user ...
 type user struct {
-	UserID      uuid.UUID
-	Name        string
-	Email       string
-	Password    string
-	Description string
-	UpdatedAt   time.Time
-	CreatedAt   time.Time
+	UserID       uuid.UUID
+	Name         string
+	Email        string
+	Password     string
+	PasswordHash string
+	Description  string
+	UpdatedAt    time.Time
+	CreatedAt    time.Time
 }
 
 // wallet ...
