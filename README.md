@@ -1,5 +1,5 @@
 # go-money
-[![Build Status](https://travis-ci.org/joaosoft/go-money.svg?branch=master)](https://travis-ci.org/joaosoft/go-money) | [![codecov](https://codecov.io/gh/joaosoft/go-money/branch/master/graph/badge.svg)](https://codecov.io/gh/joaosoft/go-money) | [![Go Report Card](https://goreportcard.com/badge/github.com/joaosoft/go-money-backend)](https://goreportcard.com/report/github.com/joaosoft/go-money-backend) | [![GoDoc](https://godoc.org/github.com/joaosoft/go-money-backend?status.svg)](https://godoc.org/github.com/joaosoft/go-money-backend/service)
+[![Build Status](https://travis-ci.org/joaosoft/go-money-backend.svg?branch=master)](https://travis-ci.org/joaosoft/go-money-backend) | [![codecov](https://codecov.io/gh/joaosoft/go-money-backend/branch/master/graph/badge.svg)](https://codecov.io/gh/joaosoft/go-money-backend) | [![Go Report Card](https://goreportcard.com/badge/github.com/joaosoft/go-money-backend)](https://goreportcard.com/report/github.com/joaosoft/go-money-backend) | [![GoDoc](https://godoc.org/github.com/joaosoft/go-money-backend?status.svg)](https://godoc.org/github.com/joaosoft/go-money-backend/service)
 
 A project that allows you to manage your day-to-day expenses.
 
@@ -23,7 +23,7 @@ go get github.com/joaosoft/go-money-backend/service
 ```
 
 ## Usage 
-This examples are available in the project at [go-money/bin/launcher/main.go](https://github.com/joaosoft/go-money-backend/tree/master/bin/launcher/main.go)
+This examples are available in the project at [go-money-backend/bin/launcher/main.go](https://github.com/joaosoft/go-money-backend/tree/master/bin/launcher/main.go)
 
 ```go
 
