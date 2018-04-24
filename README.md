@@ -28,7 +28,18 @@ go get github.com/joaosoft/go-money-backend/service
 This examples are available in the project at [go-money-backend/bin/launcher/main.go](https://github.com/joaosoft/go-money-backend/tree/master/bin/launcher/main.go)
 
 ```go
+start := time.Now()
+//
+// money
+app, err := gomoney.NewGoMoney()
+if err != nil {
+    log.Error(err)
+} else {
+    app.Start()
+}
 
+elapsed := time.Since(start)
+log.Infof("ELAPSED TIME: %s", elapsed)
 ```
 
 ## Follow me at
