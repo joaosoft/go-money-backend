@@ -1,12 +1,6 @@
-FROM golang:1.9-alpine
+FROM golang:latest
 
 ARG PROJECT_NAME=go-money
-
-# install git and mercurial
-RUN apk add --update git mercurial && rm -rf /var/cache/apk/*
-
-# install make
-RUN apk add --update bash make && rm -rf /var/cache/apk/*
 
 # install dep
 RUN go get -u github.com/golang/dep/cmd/dep
