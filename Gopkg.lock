@@ -8,6 +8,12 @@
   revision = "a0637b1543645181061469efea75f57ad2e3f23a"
 
 [[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
@@ -53,7 +59,7 @@
   branch = "master"
   name = "github.com/joaosoft/go-manager"
   packages = ["service"]
-  revision = "5cc889dbf6d994009f8d587b7cb0d4ef51f17139"
+  revision = "c54fb42d1fb999ce7ebaf935648777e729d747ac"
 
 [[projects]]
   branch = "master"
@@ -173,7 +179,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert"]
-  revision = "e73bf333ef8920dbb52ad18d4bd38ad9d9bc76d7"
+  revision = "2b6c08872f4b66da917bb4ce98df4f0307330f78"
 
 [[projects]]
   branch = "master"
@@ -208,6 +214,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d3786b8399f3faeb377b154444e3fcf6dcfd2b9a93c23e14ba3dac61593f2127"
+  inputs-digest = "18d12cdd4c42670e5aebc090195770eb3f376e3b31434c06d59a4e6e108cd5d6"
   solver-name = "gps-cdcl"
   solver-version = 1

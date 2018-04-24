@@ -9,14 +9,25 @@ import (
 
 // user ...
 type user struct {
-	UserID       uuid.UUID
-	Name         string
-	Email        string
-	Password     string
-	PasswordHash string
-	Description  string
-	UpdatedAt    time.Time
-	CreatedAt    time.Time
+	UserID      uuid.UUID
+	Name        string
+	Email       string
+	Password    string
+	Token       string
+	Description string
+	UpdatedAt   time.Time
+	CreatedAt   time.Time
+}
+
+// session ...
+type session struct {
+	SessionID   uuid.UUID
+	UserID      uuid.UUID
+	Original    string
+	Token       string
+	Description string
+	UpdatedAt   time.Time
+	CreatedAt   time.Time
 }
 
 // wallet ...

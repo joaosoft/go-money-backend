@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/image/bmp"
 )
 
@@ -147,4 +148,22 @@ func decodeImage(reader io.Reader, format string) (image img.Image, err error) {
 		image, _, err = img.Decode(reader)
 	}
 	return image, err
+}
+
+type customClaims struct {
+	*jwt.StandardClaims
+	TokenType string
+}
+
+func generateToken(tokenType string, value []byte) (string, error) {
+	claims := customClaims{
+		TokenType: tokenType,
+		StandardClaims: &jwt.StandardClaims{
+			Id: tokenName,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(value)
 }

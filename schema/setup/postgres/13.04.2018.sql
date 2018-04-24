@@ -16,7 +16,7 @@ CREATE TABLE money.users (
   name                    TEXT NOT NULL,
   email                   TEXT NOT NULL UNIQUE,
   password                TEXT NOT NULL,
-  password_hash           TEXT NOT NULL,
+  token                   TEXT NOT NULL,
   description             TEXT,
   created_at              TIMESTAMP DEFAULT NOW(),
   updated_at              TIMESTAMP DEFAULT NOW(),
@@ -25,6 +25,23 @@ CREATE TABLE money.users (
 
 CREATE TRIGGER trigger_users_updated_at BEFORE UPDATE
   ON money.users FOR EACH ROW EXECUTE PROCEDURE money.function_updated_at();
+
+
+-- SESSIONS
+CREATE TABLE money.sessions (
+  session_id              UUID NOT NULL,
+  user_id                 UUID NOT NULL,
+  original                TEXT NOT NULL UNIQUE,
+  token                   TEXT NOT NULL UNIQUE,
+  description             TEXT,
+  created_at              TIMESTAMP DEFAULT NOW(),
+  updated_at              TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY(session_id),
+  FOREIGN KEY(user_id) REFERENCES money.users(user_id)
+);
+
+CREATE TRIGGER trigger_sessions_updated_at BEFORE UPDATE
+  ON money.sessions FOR EACH ROW EXECUTE PROCEDURE money.function_updated_at();
 
 
 -- WALLETS

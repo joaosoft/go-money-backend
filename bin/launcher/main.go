@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-money/service"
+	"go-money-backend/service"
 	"time"
 
 	"github.com/joaosoft/go-log/service"

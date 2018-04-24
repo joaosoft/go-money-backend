@@ -4,6 +4,8 @@
 A project that allows you to manage your day-to-day expenses.
 
 ## Support for 
+* REST service
+* Authentication
 * Dropbox image upload and download
 * Postgres database
 

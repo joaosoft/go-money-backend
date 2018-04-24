@@ -55,7 +55,7 @@ func NewGoMoney(options ...moneyOption) (*Money, error) {
 // Start ...
 func (api *Money) Start() error {
 	apiWeb := newApiWeb(api.config.Host, api.interactor)
-	api.pm.AddWeb("api_web", apiWeb.new())
+	api.pm.AddWeb("api_web", apiWeb.client)
 
 	return api.pm.Start()
 }

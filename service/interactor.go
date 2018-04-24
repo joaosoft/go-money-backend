@@ -9,8 +9,15 @@ import (
 
 // iStorageDB ...
 type iStorageDB interface {
+	getSession(userID uuid.UUID, token string) (*session, *goerror.ErrorData)
+	getSessions(userID uuid.UUID) ([]*session, *goerror.ErrorData)
+	createSession(newSession *session) (*session, *goerror.ErrorData)
+	deleteSession(userID uuid.UUID, token string) *goerror.ErrorData
+	deleteSessions(userID uuid.UUID) *goerror.ErrorData
+
 	getUsers() ([]*user, *goerror.ErrorData)
 	getUser(userID uuid.UUID) (*user, *goerror.ErrorData)
+	getUserByEmail(email string) (*user, *goerror.ErrorData)
 	createUser(newUser *user) (*user, *goerror.ErrorData)
 	updateUser(updUser *user) (*user, *goerror.ErrorData)
 	deleteUser(userID uuid.UUID) *goerror.ErrorData
@@ -89,11 +96,33 @@ func (interactor *interactor) getUser(userID uuid.UUID) (*user, *goerror.ErrorDa
 	}
 }
 
+// getUserByEmail ...
+func (interactor *interactor) getUserByEmail(email string) (*user, *goerror.ErrorData) {
+	log.WithFields(map[string]interface{}{"method": "getUserByEmail"})
+	log.Infof("getting user by email %s", email)
+	if user, err := interactor.storageDB.getUserByEmail(email); err != nil {
+		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+			Errorf("error getting user by email %s on storage database %s", email, err).ToErrorData(err)
+		return nil, err
+	} else {
+		return user, nil
+	}
+}
+
 // createUser ...
 func (interactor *interactor) createUser(newUser *user) (*user, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "createUser"})
 
 	newUser.UserID = uuid.NewV4()
+	passwordToken, err := generateToken(authentication, []byte(newUser.Password))
+	if err != nil {
+		newErr := goerror.NewError(err)
+		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
+			Error("error when generating password token").ToErrorData(newErr)
+		return nil, newErr
+	}
+	newUser.Token = passwordToken
+
 	log.Infof("creating user %s", newUser.UserID.String())
 
 	if user, err := interactor.storageDB.createUser(newUser); err != nil {
@@ -109,6 +138,16 @@ func (interactor *interactor) createUser(newUser *user) (*user, *goerror.ErrorDa
 func (interactor *interactor) updateUser(updUser *user) (*user, *goerror.ErrorData) {
 	log.WithFields(map[string]interface{}{"method": "updateUser"})
 	log.Infof("updating user %s", updUser.UserID.String())
+
+	passwordToken, err := generateToken(authentication, []byte(updUser.Password))
+	if err != nil {
+		newErr := goerror.NewError(err)
+		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
+			Error("error when generating password token").ToErrorData(newErr)
+		return nil, newErr
+	}
+	updUser.Token = passwordToken
+
 	if user, err := interactor.storageDB.updateUser(updUser); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
 			Errorf("error updating user on storage database %s", err).ToErrorData(err)
@@ -125,6 +164,83 @@ func (interactor *interactor) deleteUser(userID uuid.UUID) *goerror.ErrorData {
 	if err := interactor.storageDB.deleteUser(userID); err != nil {
 		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
 			Errorf("error deleting user on storage database %s", err).ToErrorData(err)
+		return err
+	}
+	return nil
+}
+
+// getSessions ...
+func (interactor *interactor) getSessions(userID uuid.UUID) ([]*session, *goerror.ErrorData) {
+	log.WithFields(map[string]interface{}{"method": "getSessions"})
+	log.Info("getting sessions")
+	if sessions, err := interactor.storageDB.getSessions(userID); err != nil {
+		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+			Errorf("error getting sessions on storage database %s", err).ToErrorData(err)
+		return nil, err
+	} else {
+		return sessions, nil
+	}
+}
+
+// getSession ...
+func (interactor *interactor) getSession(userID uuid.UUID, token string) (*session, *goerror.ErrorData) {
+	log.WithFields(map[string]interface{}{"method": "getSession"})
+	log.Infof("getting session with token %s", userID.String())
+	if session, err := interactor.storageDB.getSession(userID, token); err != nil {
+		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+			Errorf("error getting session on storage database %s", err).ToErrorData(err)
+		return nil, err
+	} else {
+		return session, nil
+	}
+}
+
+// createSession ...
+func (interactor *interactor) createSession(newSession *session) (*session, *goerror.ErrorData) {
+	log.WithFields(map[string]interface{}{"method": "createSession"})
+
+	random := uuid.NewV4()
+	newSession.SessionID = uuid.NewV4()
+	token, err := generateToken(authentication, []byte(random.String()))
+	if err != nil {
+		newErr := goerror.NewError(err)
+		log.WithFields(map[string]interface{}{"error": err.Error()}).
+			Errorf("error getting sessions on storage database %s", err).ToErrorData(newErr)
+		return nil, newErr
+	}
+	newSession.Original = random.String()
+	newSession.Token = token
+
+	log.Infof("creating session for user %s", newSession.UserID.String())
+
+	if user, err := interactor.storageDB.createSession(newSession); err != nil {
+		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+			Errorf("error creating session on storage database %s", err).ToErrorData(err)
+		return nil, err
+	} else {
+		return user, nil
+	}
+}
+
+// deleteSessions ...
+func (interactor *interactor) deleteSessions(userID uuid.UUID) *goerror.ErrorData {
+	log.WithFields(map[string]interface{}{"method": "deleteSessions"})
+	log.Infof("deleting sessions of user %s", userID.String())
+	if err := interactor.storageDB.deleteSessions(userID); err != nil {
+		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+			Errorf("error deleting sessions of user %s on storage database %s", userID.String(), err).ToErrorData(err)
+		return err
+	}
+	return nil
+}
+
+// deleteSession ...
+func (interactor *interactor) deleteSession(userID uuid.UUID, token string) *goerror.ErrorData {
+	log.WithFields(map[string]interface{}{"method": "deleteSession"})
+	log.Infof("deleting session with token %s", userID.String())
+	if err := interactor.storageDB.deleteSession(userID, token); err != nil {
+		log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
+			Errorf("error deleting session of user %s  with token %s on storage database %s", userID.String(), token, err).ToErrorData(err)
 		return err
 	}
 	return nil
