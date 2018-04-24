@@ -7,6 +7,9 @@
     "db": {
       "driver": "postgres",
       "datasource": "postgres://user:password@localhost:5432?sslmode=disable"
+    },
+    "dropbox": {
+      "enabled": true
     }
   },
   "godropbox": {

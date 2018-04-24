@@ -11,7 +11,7 @@ import (
 type Money struct {
 	interactor    *interactor
 	pm            *gomanager.Manager
-	config        *goMoneyConfig
+	config        *MoneyConfig
 	isLogExternal bool
 }
 
@@ -47,7 +47,7 @@ func NewGoMoney(options ...moneyOption) (*Money, error) {
 	}
 
 	money.config = &appConfig.GoMoney
-	money.interactor = newInteractor(newStoragePostgres(simpleDB), newStorageDropbox(nil), appConfig)
+	money.interactor = newInteractor(newStoragePostgres(simpleDB), newStorageDropbox(nil), &appConfig.GoMoney)
 
 	return money, nil
 }

@@ -6,14 +6,17 @@ import (
 
 // appConfig ...
 type appConfig struct {
-	GoMoney goMoneyConfig `json:"gomoney"`
+	GoMoney MoneyConfig `json:"gomoney"`
 }
 
-// goMoneyConfig ...
-type goMoneyConfig struct {
+// MoneyConfig ...
+type MoneyConfig struct {
 	Log struct {
 		Level string `json:"level"`
 	} `json:"log"`
-	Host string             `json:"host"`
-	Db   gomanager.DBConfig `json:"db"`
+	Host    string             `json:"host"`
+	Db      gomanager.DBConfig `json:"db"`
+	Dropbox struct {
+		Enabled bool `json:"enabled"`
+	} `json:"dropbox"`
 }
