@@ -9,7 +9,11 @@ A project that allows you to manage your day-to-day expenses.
 * Dropbox image upload and download
 * Postgres database
 
-###### If i miss something or you have something interesting, please be part of this project. Let me know! My contact is at the end.
+## Start
+It starts the api on port 8082 [[here](http://localhost:8082)]
+```
+make start 
+```
 
 ## Dependecy Management 
 >### Dep
@@ -31,7 +35,7 @@ This examples are available in the project at [go-money-backend/bin/launcher/mai
 start := time.Now()
 //
 // money
-app, err := gomoney.NewGoMoney()
+app, err := gomoney.NewMoney()
 if err != nil {
     log.Error(err)
 } else {

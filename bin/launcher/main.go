@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-money-backend/service"
+	"go-money-backend/app"
 	"time"
 
 	"github.com/joaosoft/go-log/service"
@@ -16,7 +16,7 @@ func main() {
 	start := time.Now()
 	//
 	// money
-	app, err := gomoney.NewGoMoney()
+	app, err := gomoney.NewMoney()
 	if err != nil {
 		log.Error(err)
 	} else {

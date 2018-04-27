@@ -4,14 +4,14 @@ services:
   app:
     build:
       context: .
-      dockerfile: sbin/docker/alpine.dockerfile
+      dockerfile: Dockerfile
     command: run ./bin/launcher/main.go
     volumes:
       - esdata1:/go-money
     environment:
       - ENV=container
     ports:
-      - 8081:8080
+      - 8082:8080
 
   postgres:
     build:

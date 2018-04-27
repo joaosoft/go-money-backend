@@ -15,8 +15,8 @@ type Money struct {
 	isLogExternal bool
 }
 
-// NewGoMoney ...
-func NewGoMoney(options ...moneyOption) (*Money, error) {
+// NewMoney ...
+func NewMoney(options ...moneyOption) (*Money, error) {
 	pm := gomanager.NewManager(gomanager.WithRunInBackground(false))
 
 	money := &Money{

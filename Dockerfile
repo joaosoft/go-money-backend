@@ -1,6 +1,7 @@
 FROM golang:latest
+MAINTAINER João Ribeiro <joaosoft@gmail.com>
 
-ARG PROJECT_NAME=go-money
+ARG PROJECT_NAME=go-money-backend
 
 # install dep
 RUN go get -u github.com/golang/dep/cmd/dep
@@ -18,3 +19,5 @@ WORKDIR /go/src/$PROJECT_NAME/
 
 EXPOSE 8080
 ENTRYPOINT ["go"]
+
+#CMD [ "go", "run", "/bin/launcher/main.go" ]
