@@ -1,8 +1,8 @@
 package gomoney
 
 import (
-	"github.com/joaosoft/go-dropbox/service"
-	"github.com/joaosoft/go-error/service"
+	godropbox "github.com/joaosoft/go-dropbox/app"
+	goerror "github.com/joaosoft/go-error/app"
 )
 
 // storageDropbox ...

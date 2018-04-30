@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/joaosoft/go-error/service"
+	goerror "github.com/joaosoft/go-error/app"
 	"github.com/labstack/echo"
 )
 

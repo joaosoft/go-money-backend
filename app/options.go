@@ -1,6 +1,6 @@
 package gomoney
 
-import "github.com/joaosoft/go-log/service"
+import golog "github.com/joaosoft/go-log/app"
 
 // moneyOption ...
 type moneyOption func(money *Money)

@@ -4,7 +4,7 @@ import (
 	"go-money-backend/app"
 	"time"
 
-	"github.com/joaosoft/go-log/service"
+	golog "github.com/joaosoft/go-log/app"
 
 	_ "github.com/go-sql-driver/mysql" // mysql driver
 	_ "github.com/lib/pq"              // postgres driver

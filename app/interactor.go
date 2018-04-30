@@ -3,7 +3,7 @@ package gomoney
 import (
 	"fmt"
 
-	"github.com/joaosoft/go-error/service"
+	goerror "github.com/joaosoft/go-error/app"
 	"github.com/satori/go.uuid"
 )
 

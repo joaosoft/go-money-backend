@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/joaosoft/go-error/service"
-	"github.com/joaosoft/go-manager/service"
+	goerror "github.com/joaosoft/go-error/app"
+	gomanager "github.com/joaosoft/go-manager/app"
 	"github.com/labstack/echo"
 	"github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
@@ -32,7 +32,7 @@ type apiWeb struct {
 type errorResponse struct {
 	Code    int    `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
-	Cause   string `json:"cause,omitempt`
+	Cause   string `json:"cause,omitempty"`
 }
 
 func newApiWeb(host string, interactor *interactor) *apiWeb {
