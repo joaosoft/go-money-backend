@@ -22,6 +22,11 @@ vet:
 metalinter:
 	gometalinter ./*
 
+swagger:
+	mkdir -p assets/swagger assets/redoc
+	swagger generate spec -o assets/swagger/swagger.json -b ./app
+	swagger generate spec -o assets/redoc/swagger.json -b ./app
+
 build:
 	docker build -t go-money-backend-image .
 

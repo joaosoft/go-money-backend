@@ -3,13 +3,12 @@ package gomoney
 import (
 	"time"
 
-	"github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 )
 
 // user ...
 type user struct {
-	UserID      uuid.UUID
+	UserID      string
 	Name        string
 	Email       string
 	Password    string
@@ -21,8 +20,8 @@ type user struct {
 
 // session ...
 type session struct {
-	SessionID   uuid.UUID
-	UserID      uuid.UUID
+	SessionID   string
+	UserID      string
 	Original    string
 	Token       string
 	Description string
@@ -32,8 +31,8 @@ type session struct {
 
 // wallet ...
 type wallet struct {
-	WalletID    uuid.UUID
-	UserID      uuid.UUID
+	WalletID    string
+	UserID      string
 	Name        string
 	Description string
 	Password    string
@@ -43,8 +42,8 @@ type wallet struct {
 
 // image ...
 type image struct {
-	ImageID     uuid.UUID
-	UserID      uuid.UUID
+	ImageID     string
+	UserID      string
 	Name        string
 	Description string
 	Url         string
@@ -57,10 +56,10 @@ type image struct {
 
 // transaction ...
 type transaction struct {
-	TransactionID uuid.UUID
-	UserID        uuid.UUID
-	WalletID      uuid.UUID
-	CategoryID    uuid.UUID
+	TransactionID string
+	UserID        string
+	WalletID      string
+	CategoryID    string
 	Price         decimal.Decimal
 	Description   string
 	Date          time.Time
@@ -70,9 +69,9 @@ type transaction struct {
 
 // category ...
 type category struct {
-	CategoryID  uuid.UUID
-	UserID      uuid.UUID
-	ImageID     uuid.UUID
+	CategoryID  string
+	UserID      string
+	ImageID     string
 	Name        string
 	Description string
 	UpdatedAt   time.Time

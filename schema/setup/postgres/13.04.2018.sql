@@ -12,12 +12,13 @@ CREATE OR REPLACE FUNCTION money.function_updated_at()
 
 -- USERS
 CREATE TABLE money.users (
-  user_id                 UUID NOT NULL,
+  user_id                 TEXT NOT NULL,
   name                    TEXT NOT NULL,
   email                   TEXT NOT NULL UNIQUE,
   password                TEXT NOT NULL,
   token                   TEXT NOT NULL,
   description             TEXT,
+  status                  INTEGER DEFAULT 0,
   created_at              TIMESTAMP DEFAULT NOW(),
   updated_at              TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY(user_id)
@@ -29,8 +30,8 @@ CREATE TRIGGER trigger_users_updated_at BEFORE UPDATE
 
 -- SESSIONS
 CREATE TABLE money.sessions (
-  session_id              UUID NOT NULL,
-  user_id                 UUID NOT NULL,
+  session_id              TEXT NOT NULL,
+  user_id                 TEXT NOT NULL,
   original                TEXT NOT NULL UNIQUE,
   token                   TEXT NOT NULL UNIQUE,
   description             TEXT,
@@ -46,7 +47,7 @@ CREATE TRIGGER trigger_sessions_updated_at BEFORE UPDATE
 
 -- WALLETS
 CREATE TABLE money.wallets (
-  wallet_id               UUID NOT NULL,
+  wallet_id               TEXT NOT NULL,
   user_id                 TEXT NOT NULL,
   name                    TEXT NOT NULL,
   description             TEXT,
@@ -62,8 +63,8 @@ CREATE TRIGGER trigger_wallers_updated_at BEFORE UPDATE
 
 -- IMAGES
 CREATE TABLE money.images (
-  image_id                UUID NOT NULL,
-  user_id                 UUID NOT NULL,
+  image_id                TEXT NOT NULL,
+  user_id                 TEXT NOT NULL,
   name                    TEXT NOT NULL,
   description             TEXT,
   url                     TEXT,
@@ -82,9 +83,9 @@ CREATE TRIGGER trigger_images_updated_at BEFORE UPDATE
 
 -- CATEGORIES
 CREATE TABLE money.categories (
-  category_id             UUID NOT NULL,
-  user_id                 UUID NOT NULL,
-  image_id                UUID NOT NULL,
+  category_id             TEXT NOT NULL,
+  user_id                 TEXT NOT NULL,
+  image_id                TEXT NOT NULL,
   name                    TEXT NOT NULL,
   description             TEXT,
   created_at              TIMESTAMP DEFAULT NOW(),
@@ -100,10 +101,10 @@ CREATE TRIGGER trigger_categories_updated_at BEFORE UPDATE
 
 -- TRANSACTIONS
 CREATE TABLE money.transactions (
-  transaction_id          UUID NOT NULL,
-  user_id                 UUID NOT NULL,
-  wallet_id               UUID NOT NULL,
-  category_id             UUID NOT NULL,
+  transaction_id          TEXT NOT NULL,
+  user_id                 TEXT NOT NULL,
+  wallet_id               TEXT NOT NULL,
+  category_id             TEXT NOT NULL,
   price                   FLOAT NOT NULL,
   description             TEXT,
   date                    TIMESTAMP,

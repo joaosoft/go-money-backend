@@ -11,7 +11,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"math/rand"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
+	"github.com/oklog/ulid"
 	"golang.org/x/image/bmp"
 )
 
@@ -166,4 +170,15 @@ func generateToken(tokenType string, value []byte) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString(value)
+}
+
+func genUI() string {
+	t := time.Now().UTC()
+	entropy := rand.New(rand.NewSource(t.UnixNano()))
+	return ulid.MustNew(ulid.Timestamp(t), entropy).String()
+}
+
+func valUI(id string) error {
+	_, err := ulid.Parse(id)
+	return err
 }

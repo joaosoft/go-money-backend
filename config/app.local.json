@@ -3,7 +3,7 @@
     "log": {
       "level": "info"
     },
-    "host": "localhost:8080",
+    "host": "localhost:8082",
     "db": {
       "driver": "postgres",
       "datasource": "postgres://user:password@localhost:7001?sslmode=disable"

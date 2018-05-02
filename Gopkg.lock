@@ -47,13 +47,13 @@
   branch = "master"
   name = "github.com/joaosoft/go-error"
   packages = ["app"]
-  revision = "1d69617e638d542f7377639e580061a541d9073e"
+  revision = "140491fc9e31cf3f490dab432c8b8ac4ea3d315e"
 
 [[projects]]
   branch = "master"
   name = "github.com/joaosoft/go-log"
   packages = ["app"]
-  revision = "a6f5cd4aea4eee23d9717651365df15375fff27f"
+  revision = "275a0f1880593536bf6a49209114efdef4a4c75c"
 
 [[projects]]
   branch = "master"
@@ -114,6 +114,12 @@
   packages = ["."]
   revision = "eee57a3ac4174c55924125bb15eeeda8cffb6e6f"
   version = "v1.0.7"
+
+[[projects]]
+  name = "github.com/oklog/ulid"
+  packages = ["."]
+  revision = "d311cb43c92434ec4072dfbbda3400741d0a6337"
+  version = "v0.3.0"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -179,7 +185,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert"]
-  revision = "ae8bce0030810cf999bb2b9868ae5c7c58e6343b"
+  revision = "613d6eafa307c6881a737a3c35c0e312e8d3a8c5"
 
 [[projects]]
   branch = "master"
@@ -191,7 +197,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "4adea008a5e5f820b6028611ae0b6b3fbcec534b"
+  revision = "78d5f264b493f125018180c204871ecf58a2dce1"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -214,6 +220,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d6eb1a45b6c1679ff714f3f1f7ac4e1105798fd2cc6dadbf2eb94cd0d4d81a67"
+  inputs-digest = "9871e93d27936c4cf81db2d918486c3862999e8b083fa1b47b62d7489fd33d2a"
   solver-name = "gps-cdcl"
   solver-version = 1

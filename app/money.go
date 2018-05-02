@@ -5,7 +5,20 @@ import (
 
 	golog "github.com/joaosoft/go-log/app"
 	gomanager "github.com/joaosoft/go-manager/app"
+	"gopkg.in/validator.v2"
 )
+
+func init() {
+	validator.SetValidationFunc("ui", func(v interface{}, param string) error {
+		switch v.(type) {
+		case string:
+			if err := valUI(v.(string)); err != nil {
+				return fmt.Errorf("%s is not a valid unique identifier", param)
+			}
+		}
+		return nil
+	})
+}
 
 // Money ...
 type Money struct {

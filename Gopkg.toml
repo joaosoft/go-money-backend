@@ -54,6 +54,10 @@
   name = "github.com/lib/pq"
 
 [[constraint]]
+  name = "github.com/oklog/ulid"
+  version = "0.3.0"
+
+[[constraint]]
   name = "github.com/satori/go.uuid"
   version = "1.2.0"
 
