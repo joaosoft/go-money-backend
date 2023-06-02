@@ -2,31 +2,30 @@
 //
 // Go Money is a general day-to-day expenses manager.
 //
-//     Schemes: http
-//     BasePath: /api/1
-//     Version: 1.0.0
+//	Schemes: http
+//	BasePath: /api/1
+//	Version: 1.0.0
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
 // swagger:meta
 package gomoney
 
 import (
 	"fmt"
+	"github.com/joaosoft/manager"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/joaosoft/go-error/app"
-	"github.com/joaosoft/go-manager/app"
+	"github.com/joaosoft/errors"
+	"github.com/joaosoft/validator"
 	"github.com/labstack/echo"
 	"github.com/shopspring/decimal"
-	"gopkg.in/validator.v2"
 )
 
 const (
@@ -39,7 +38,7 @@ const (
 type apiWeb struct {
 	host       string
 	auth       echo.MiddlewareFunc
-	client     gomanager.IWeb
+	client     manager.IWeb
 	interactor *interactor
 }
 
@@ -49,11 +48,11 @@ type errorResponse struct {
 	Cause   string `json:"cause,omitempty"`
 }
 
-func newApiWeb(host string, interactor *interactor) *apiWeb {
+func (m *Money) newApiWeb(host string, interactor *interactor) *apiWeb {
 	webApi := &apiWeb{
 		host:       host,
 		interactor: interactor,
-		client:     gomanager.NewSimpleWebEcho(host),
+		client:     m.pm.NewSimpleWebEcho(host),
 	}
 
 	webApi.registerRoutes()
@@ -62,7 +61,7 @@ func newApiWeb(host string, interactor *interactor) *apiWeb {
 }
 
 func (api *apiWeb) registerRoutes() error {
-	api.client = gomanager.NewSimpleWebEcho(api.host)
+	api.client = manager.NewSimpleWebEcho(api.host)
 	api.auth = api.authenticate()
 
 	api.registerRoutesForUsers()
@@ -84,7 +83,7 @@ func (api *apiWeb) authenticate() echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			request := authenticateRequest{UserID: ctx.Param("user_id")}
 			if err := validator.Validate(request); err != nil {
-				newErr := goerror.NewError(err)
+				newErr := errors.NewError(err)
 				log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 					Error("error when validating body request").ToErrorData(newErr)
 				return ctx.JSON(http.StatusNetworkAuthenticationRequired, errorResponse{Code: http.StatusNetworkAuthenticationRequired, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -174,18 +173,18 @@ func (api *apiWeb) registerRoutesForUsers() error {
 //
 // This api gets all users.
 //
-//     Consumes:
-//     - application/json
+//	    Consumes:
+//	    - application/json
 //
-//     Produces:
-//     - application/json
+//	    Produces:
+//	    - application/json
 //
-//     Schemes: http
+//	    Schemes: http
 //
-//     Responses:
-//       200: userResponse
-//       404:
-//		 500:
+//	    Responses:
+//	      200: userResponse
+//	      404:
+//			 500:
 func (api *apiWeb) getUsersHandler(ctx echo.Context) error {
 	if users, err := api.interactor.getUsers(); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
@@ -216,23 +215,23 @@ func (api *apiWeb) getUsersHandler(ctx echo.Context) error {
 //
 // This api gets a user.
 //
-//     Consumes:
-//     - application/json
+//	    Consumes:
+//	    - application/json
 //
-//     Produces:
-//     - application/json
+//	    Produces:
+//	    - application/json
 //
-//     Schemes: http
+//	    Schemes: http
 //
-//     Responses:
-//       200: []userResponse
-//		 400:
-//       404:
-//		 500:
+//	    Responses:
+//	      200: []userResponse
+//			 400:
+//	      404:
+//			 500:
 func (api *apiWeb) getUserHandler(ctx echo.Context) error {
 	request := getUserRequest{UserID: ctx.Param("user_id")}
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -262,29 +261,29 @@ func (api *apiWeb) getUserHandler(ctx echo.Context) error {
 //
 // This api creates a user.
 //
-//     Consumes:
-//     - application/json
+//	    Consumes:
+//	    - application/json
 //
-//     Produces:
-//     - application/json
+//	    Produces:
+//	    - application/json
 //
-//     Schemes: http
+//	    Schemes: http
 //
-//     Responses:
-//       201: userResponse
-//		 400:
-//		 500:
+//	    Responses:
+//	      201: userResponse
+//			 400:
+//			 500:
 func (api *apiWeb) createUserHandler(ctx echo.Context) error {
 	request := createUserRequest{}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -319,30 +318,30 @@ func (api *apiWeb) createUserHandler(ctx echo.Context) error {
 //
 // This api updates a user.
 //
-//     Consumes:
-//     - application/json
+//	    Consumes:
+//	    - application/json
 //
-//     Produces:
-//     - application/json
+//	    Produces:
+//	    - application/json
 //
-//     Schemes: http
+//	    Schemes: http
 //
-//     Responses:
-//       200: userResponse
-//		 400:
-//       404:
-//		 500:
+//	    Responses:
+//	      200: userResponse
+//			 400:
+//	      404:
+//			 500:
 func (api *apiWeb) updateUserHandler(ctx echo.Context) error {
 	request := updateUserRequest{UserID: ctx.Param("user_id")}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -378,22 +377,22 @@ func (api *apiWeb) updateUserHandler(ctx echo.Context) error {
 //
 // This api deletes a user.
 //
-//     Consumes:
-//     - application/json
+//	    Consumes:
+//	    - application/json
 //
-//     Produces:
-//     - application/json
+//	    Produces:
+//	    - application/json
 //
-//     Schemes: http
+//	    Schemes: http
 //
-//     Responses:
-//       200:
-//		 400:
-//		 500:
+//	    Responses:
+//	      200:
+//			 400:
+//			 500:
 func (api *apiWeb) deleteUserHandler(ctx echo.Context) error {
 	request := deleteUserRequest{UserID: ctx.Param("user_id")}
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -451,35 +450,35 @@ func (api *apiWeb) registerRoutesForSessions() error {
 func (api *apiWeb) createSessionHandler(ctx echo.Context) error {
 	request := createSessionRequest{}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if user, err := api.interactor.getUserByEmail(request.Body.Email); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Errorf("error getting user by email %s", request.Body.Email).ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	} else {
 		passwordToken, err := generateToken(authentication, []byte(request.Body.Password))
 		if err != nil {
-			newErr := goerror.NewError(err)
+			newErr := errors.NewError(err)
 			log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 				Error("error when comparing password").ToErrorData(newErr)
 			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: newErr.Error(), Cause: newErr.Cause()})
 		}
 
 		if user.Token != passwordToken {
-			newErr := goerror.FromString(fmt.Sprintf("invalid password expected: %s, given: %s", user.Token, passwordToken))
+			newErr := errors.FromString(fmt.Sprintf("invalid password expected: %s, given: %s", user.Token, passwordToken))
 			log.WithFields(map[string]interface{}{}).Error(newErr.Error())
 			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 		}
@@ -529,7 +528,7 @@ func (api *apiWeb) deleteSessionHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -538,7 +537,7 @@ func (api *apiWeb) deleteSessionHandler(ctx echo.Context) error {
 	token := ctx.Request().Header.Get(session_key)
 
 	if user, err := api.interactor.getUserByEmail(request.Email); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Errorf("error getting user by email %s", request.Email).ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -557,7 +556,7 @@ func (api *apiWeb) deleteSessionsHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -627,7 +626,7 @@ func (api *apiWeb) getWalletsHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -662,7 +661,7 @@ func (api *apiWeb) getWalletHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -692,14 +691,14 @@ func (api *apiWeb) createWalletsHandler(ctx echo.Context) error {
 	wallets := make([]*wallet, 0)
 
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -741,14 +740,14 @@ func (api *apiWeb) updateWalletHandler(ctx echo.Context) error {
 		WalletID: ctx.Param("wallet_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -784,7 +783,7 @@ func (api *apiWeb) deleteWalletHandler(ctx echo.Context) error {
 		WalletID: ctx.Param("wallet_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -907,14 +906,14 @@ func (api *apiWeb) createCategoriesHandler(ctx echo.Context) error {
 	categories := make([]*category, 0)
 
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -956,14 +955,14 @@ func (api *apiWeb) updateCategoryHandler(ctx echo.Context) error {
 		CategoryID: ctx.Param("category_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -1158,20 +1157,20 @@ func (api *apiWeb) createImageHandler(ctx echo.Context) error {
 	request.Body.ImageKey = "image"
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if downloads, err := download(request.Body.ImageKey, ctx); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error uploading images").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	} else {
 		if len(downloads) == 0 {
-			newErr := goerror.FromString("there is no file in the request")
+			newErr := errors.FromString("there is no file in the request")
 			log.Error(newErr.Error())
 			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 		}
@@ -1220,20 +1219,20 @@ func (api *apiWeb) updateImageHandler(ctx echo.Context) error {
 	request.Body.ImageKey = ctx.FormValue("image_key")
 
 	if err := validator.Validate(request); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if downloads, err := download(request.Body.ImageKey, ctx); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error uploading images").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	} else {
 		if len(downloads) == 0 {
-			newErr := goerror.FromString("there is no file in the request")
+			newErr := errors.FromString("there is no file in the request")
 			log.Error(newErr.Error())
 			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 		}
@@ -1410,7 +1409,7 @@ func (api *apiWeb) createTransactionsHandler(ctx echo.Context) error {
 	transactions := make([]*transaction, 0)
 
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -1418,7 +1417,7 @@ func (api *apiWeb) createTransactionsHandler(ctx echo.Context) error {
 
 	for _, item := range request.Body {
 		if err := validator.Validate(item); err != nil {
-			newErr := goerror.NewError(err)
+			newErr := errors.NewError(err)
 			log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 				Error("error when validating body request").ToErrorData(newErr)
 			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -1428,7 +1427,7 @@ func (api *apiWeb) createTransactionsHandler(ctx echo.Context) error {
 	for _, item := range request.Body {
 		date, err := time.Parse(time.RFC3339, item.Date)
 		if err != nil {
-			newErr := goerror.NewError(err)
+			newErr := errors.NewError(err)
 			log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 				Error("error getting date").ToErrorData(newErr)
 			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -1476,14 +1475,14 @@ func (api *apiWeb) updateTransactionHandler(ctx echo.Context) error {
 		TransactionID: ctx.Param("transaction_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting body").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error when validating body request").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -1491,7 +1490,7 @@ func (api *apiWeb) updateTransactionHandler(ctx echo.Context) error {
 
 	price, err := decimal.NewFromString(request.Body.Price)
 	if err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting price").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
@@ -1499,7 +1498,7 @@ func (api *apiWeb) updateTransactionHandler(ctx echo.Context) error {
 
 	date, err := time.Parse(time.RFC3339, request.Body.Date)
 	if err != nil {
-		newErr := goerror.NewError(err)
+		newErr := errors.NewError(err)
 		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
 			Error("error getting date").ToErrorData(newErr)
 		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})

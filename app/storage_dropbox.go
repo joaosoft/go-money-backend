@@ -1,38 +1,37 @@
 package gomoney
 
 import (
-	godropbox "github.com/joaosoft/go-dropbox/app"
-	goerror "github.com/joaosoft/go-error/app"
+	"github.com/joaosoft/dropbox"
 )
 
 // storageDropbox ...
 type storageDropbox struct {
-	conn *godropbox.Dropbox
+	conn *dropbox.Dropbox
 }
 
 // newStoragePostgres ...
-func newStorageDropbox(config *godropbox.DropboxConfig) *storageDropbox {
-	var dropbox *godropbox.Dropbox
+func newStorageDropbox(config *dropbox.DropboxConfig) *storageDropbox {
+	var conn *dropbox.Dropbox
 	if config == nil {
-		dropbox = godropbox.NewDropbox()
+		conn, _ = dropbox.NewDropbox()
 	} else {
-		dropbox = godropbox.NewDropbox(godropbox.WithConfiguration(config))
+		conn, _ = dropbox.NewDropbox(dropbox.WithConfiguration(config))
 	}
 	return &storageDropbox{
-		conn: dropbox,
+		conn: conn,
 	}
 }
 
-func (storage *storageDropbox) upload(path string, data []byte) *goerror.ErrorData {
+func (storage *storageDropbox) upload(path string, data []byte) error {
 	_, err := storage.conn.File().Upload(path, data)
 	return err
 }
 
-func (storage *storageDropbox) download(path string) ([]byte, *goerror.ErrorData) {
+func (storage *storageDropbox) download(path string) ([]byte, error) {
 	return storage.conn.File().Download(path)
 }
 
-func (storage *storageDropbox) delete(path string) *goerror.ErrorData {
+func (storage *storageDropbox) delete(path string) error {
 	_, err := storage.conn.Folder().DeleteFolder(path)
 	return err
 }

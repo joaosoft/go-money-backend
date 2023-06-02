@@ -1,16 +1,16 @@
 package main
 
 import (
-	"go-money-backend/app"
+	gomoney "github.com/joaosoft/go-money-backend/app"
 	"time"
 
-	"github.com/joaosoft/go-log/app"
+	"github.com/joaosoft/logger"
 
 	_ "github.com/go-sql-driver/mysql" // mysql driver
 	_ "github.com/lib/pq"              // postgres driver
 )
 
-var log = golog.NewLogDefault("go-money", golog.InfoLevel)
+var log = logger.NewLogDefault("go-money", logger.InfoLevel)
 
 func main() {
 	start := time.Now()

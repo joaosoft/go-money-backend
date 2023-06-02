@@ -1,7 +1,7 @@
 package gomoney
 
 import (
-	gomanager "github.com/joaosoft/go-manager/app"
+	gomanager "github.com/joaosoft/manager"
 )
 
 // appConfig ...

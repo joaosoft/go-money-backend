@@ -1,7 +1,7 @@
 package gomoney
 
 import (
-	golog "github.com/joaosoft/go-log/app"
+	golog "github.com/joaosoft/logger"
 )
 
 var global = make(map[string]interface{})

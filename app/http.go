@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	goerror "github.com/joaosoft/go-error/app"
+	"github.com/joaosoft/errors"
 	"github.com/labstack/echo"
 )
 
@@ -17,13 +17,13 @@ type downloadData struct {
 	Data     bytes.Buffer
 }
 
-func download(key string, ctx echo.Context) ([]*downloadData, *goerror.ErrorData) {
+func download(key string, ctx echo.Context) ([]*downloadData, error) {
 	downloads := make([]*downloadData, 0)
 
 	// multipart form
 	form, err := ctx.MultipartForm()
 	if err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	files := form.File[key]
@@ -32,7 +32,7 @@ func download(key string, ctx echo.Context) ([]*downloadData, *goerror.ErrorData
 		// source
 		src, err := file.Open()
 		if err != nil {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		defer src.Close()
 
@@ -53,7 +53,7 @@ func download(key string, ctx echo.Context) ([]*downloadData, *goerror.ErrorData
 	return downloads, nil
 }
 
-func upload(client *http.Client, url string, values map[string]io.Reader) *goerror.ErrorData {
+func upload(client *http.Client, url string, values map[string]io.Reader) error {
 	var b bytes.Buffer
 	var err error
 	downloads := multipart.NewWriter(&b)
@@ -66,16 +66,16 @@ func upload(client *http.Client, url string, values map[string]io.Reader) *goerr
 		// Add an image file
 		if file, ok := value.(*os.File); ok {
 			if fw, err = downloads.CreateFormFile(key, file.Name()); err != nil {
-				return goerror.NewError(err)
+				return errors.New(errors.LevelError, 1, err)
 			}
 		} else {
 			// Add other fields
 			if fw, err = downloads.CreateFormField(key); err != nil {
-				return goerror.NewError(err)
+				return errors.New(errors.LevelError, 1, err)
 			}
 		}
 		if _, err = io.Copy(fw, value); err != nil {
-			return goerror.NewError(err)
+			return errors.New(errors.LevelError, 1, err)
 		}
 
 	}
@@ -85,7 +85,7 @@ func upload(client *http.Client, url string, values map[string]io.Reader) *goerr
 	// now that you have a form, you can submit it to your handler.
 	req, err := http.NewRequest("POST", url, &b)
 	if err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 	// don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", downloads.FormDataContentType())
@@ -93,12 +93,12 @@ func upload(client *http.Client, url string, values map[string]io.Reader) *goerr
 	// submit the request
 	res, err := client.Do(req)
 	if err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	// check the response
 	if res.StatusCode != http.StatusOK {
-		return goerror.FromString(fmt.Sprintf("bad status: %s", res.Status))
+		return errors.New(errors.LevelError, 1, fmt.Sprintf("bad status: %s", res.Status))
 	}
 
 	return nil

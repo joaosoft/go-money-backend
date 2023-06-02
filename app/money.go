@@ -3,17 +3,17 @@ package gomoney
 import (
 	"fmt"
 
-	golog "github.com/joaosoft/go-log/app"
-	gomanager "github.com/joaosoft/go-manager/app"
-	"gopkg.in/validator.v2"
+	"github.com/joaosoft/logger"
+	"github.com/joaosoft/manager"
+	"github.com/joaosoft/validator"
 )
 
 func init() {
-	validator.SetValidationFunc("ui", func(v interface{}, param string) error {
-		switch v.(type) {
+	validator.AddCallback("ui", func(context *validator.ValidatorContext, validationData *validator.ValidationData) []error {
+		switch v := validationData.Value.Interface().(type) {
 		case string:
-			if err := valUI(v.(string)); err != nil {
-				return fmt.Errorf("%s is not a valid unique identifier", param)
+			if err := valUI(v); err != nil {
+				return []error{fmt.Errorf("%s is not a valid unique identifier", v)}
 			}
 		}
 		return nil
@@ -23,14 +23,14 @@ func init() {
 // Money ...
 type Money struct {
 	interactor    *interactor
-	pm            *gomanager.Manager
+	pm            *manager.Manager
 	config        *MoneyConfig
 	isLogExternal bool
 }
 
 // NewMoney ...
 func NewMoney(options ...moneyOption) (*Money, error) {
-	pm := gomanager.NewManager(gomanager.WithRunInBackground(false))
+	pm := manager.NewManager(manager.WithRunInBackground(false))
 
 	money := &Money{
 		pm: pm,
@@ -39,21 +39,21 @@ func NewMoney(options ...moneyOption) (*Money, error) {
 	money.Reconfigure(options...)
 
 	if money.isLogExternal {
-		pm.Reconfigure(gomanager.WithLogger(log))
+		pm.Reconfigure(manager.WithLogger(log))
 	}
 
 	// load configuration file
 	appConfig := &appConfig{}
-	if simpleConfig, err := gomanager.NewSimpleConfig(fmt.Sprintf("/config/app.%s.json", getEnv()), appConfig); err != nil {
+	if simpleConfig, err := manager.NewSimpleConfig(fmt.Sprintf("/config/app.%s.json", getEnv()), appConfig); err != nil {
 		log.Error(err.Error())
 	} else {
 		pm.AddConfig("config_app", simpleConfig)
-		level, _ := golog.ParseLevel(appConfig.GoMoney.Log.Level)
+		level, _ := logger.ParseLevel(appConfig.GoMoney.Log.Level)
 		log.Debugf("setting log level to %s", level)
-		log.Reconfigure(golog.WithLevel(level))
+		log.Reconfigure(logger.WithLevel(level))
 	}
 
-	simpleDB := gomanager.NewSimpleDB(&appConfig.GoMoney.Db)
+	simpleDB := pm.NewSimpleDB(&appConfig.GoMoney.Db)
 	if err := pm.AddDB("db_postgres", simpleDB); err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -66,14 +66,14 @@ func NewMoney(options ...moneyOption) (*Money, error) {
 }
 
 // Start ...
-func (api *Money) Start() error {
-	apiWeb := newApiWeb(api.config.Host, api.interactor)
-	api.pm.AddWeb("api_web", apiWeb.client)
+func (m *Money) Start() error {
+	apiWeb := m.newApiWeb(m.config.Host, m.interactor)
+	m.pm.AddWeb("api_web", apiWeb.client)
 
-	return api.pm.Start()
+	return m.pm.Start()
 }
 
 // Stop ...
-func (api *Money) Stop() error {
-	return api.pm.Stop()
+func (m *Money) Stop() error {
+	return m.pm.Stop()
 }

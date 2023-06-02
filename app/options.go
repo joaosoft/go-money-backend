@@ -1,19 +1,19 @@
 package gomoney
 
-import golog "github.com/joaosoft/go-log/app"
+import "github.com/joaosoft/logger"
 
 // moneyOption ...
 type moneyOption func(money *Money)
 
 // Reconfigure ...
-func (money *Money) Reconfigure(options ...moneyOption) {
+func (m *Money) Reconfigure(options ...moneyOption) {
 	for _, option := range options {
-		option(money)
+		option(m)
 	}
 }
 
 // WithLogger ...
-func WithLogger(logger golog.ILog) moneyOption {
+func WithLogger(logger logger.ILogger) moneyOption {
 	return func(manager *Money) {
 		log = logger
 		manager.isLogExternal = true
@@ -21,7 +21,7 @@ func WithLogger(logger golog.ILog) moneyOption {
 }
 
 // WithLogLevel ...
-func WithLogLevel(level golog.Level) moneyOption {
+func WithLogLevel(level logger.Level) moneyOption {
 	return func(money *Money) {
 		log.SetLevel(level)
 	}

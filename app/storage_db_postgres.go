@@ -2,26 +2,25 @@ package gomoney
 
 import (
 	"database/sql"
-
-	goerror "github.com/joaosoft/go-error/app"
-	gomanager "github.com/joaosoft/go-manager/app"
+	"github.com/joaosoft/errors"
+	"github.com/joaosoft/manager"
 	"github.com/lib/pq"
 )
 
 // storagePostgres ...
 type storagePostgres struct {
-	conn gomanager.IDB
+	conn manager.IDB
 }
 
 // newStoragePostgres ...
-func newStoragePostgres(connection gomanager.IDB) *storagePostgres {
+func newStoragePostgres(connection manager.IDB) *storagePostgres {
 	return &storagePostgres{
 		conn: connection,
 	}
 }
 
 // getUsers ...
-func (storage *storagePostgres) getUsers() ([]*user, *goerror.ErrorData) {
+func (storage *storagePostgres) getUsers() ([]*user, error) {
 	rows, err := storage.conn.Get().Query(`
 	    SELECT
 			user_id,
@@ -35,7 +34,7 @@ func (storage *storagePostgres) getUsers() ([]*user, *goerror.ErrorData) {
 	`)
 	defer rows.Close()
 	if err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	users := make([]*user, 0)
@@ -52,7 +51,7 @@ func (storage *storagePostgres) getUsers() ([]*user, *goerror.ErrorData) {
 			&user.CreatedAt); err != nil {
 
 			if err != sql.ErrNoRows {
-				return nil, goerror.NewError(err)
+				return nil, errors.New(errors.LevelError, 1, err)
 			}
 			return nil, nil
 		}
@@ -63,7 +62,7 @@ func (storage *storagePostgres) getUsers() ([]*user, *goerror.ErrorData) {
 }
 
 // getUser ...
-func (storage *storagePostgres) getUser(userID string) (*user, *goerror.ErrorData) {
+func (storage *storagePostgres) getUser(userID string) (*user, error) {
 	row := storage.conn.Get().QueryRow(`
 	    SELECT
 		    name,
@@ -88,7 +87,7 @@ func (storage *storagePostgres) getUser(userID string) (*user, *goerror.ErrorDat
 		&user.CreatedAt); err != nil {
 
 		if err != sql.ErrNoRows {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		return nil, nil
 	}
@@ -97,7 +96,7 @@ func (storage *storagePostgres) getUser(userID string) (*user, *goerror.ErrorDat
 }
 
 // getUserByEmail ...
-func (storage *storagePostgres) getUserByEmail(email string) (*user, *goerror.ErrorData) {
+func (storage *storagePostgres) getUserByEmail(email string) (*user, error) {
 	row := storage.conn.Get().QueryRow(`
 	    SELECT
 			user_id,
@@ -122,7 +121,7 @@ func (storage *storagePostgres) getUserByEmail(email string) (*user, *goerror.Er
 		&user.CreatedAt); err != nil {
 
 		if err != sql.ErrNoRows {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		return nil, nil
 	}
@@ -131,12 +130,12 @@ func (storage *storagePostgres) getUserByEmail(email string) (*user, *goerror.Er
 }
 
 // createUser ...
-func (storage *storagePostgres) createUser(newUser *user) (*user, *goerror.ErrorData) {
+func (storage *storagePostgres) createUser(newUser *user) (*user, error) {
 	if result, err := storage.conn.Get().Exec(`
 		INSERT INTO money.users(user_id, name, email, password, token, description)
 		VALUES($1, $2, $3, $4, $5, $6)
 	`, newUser.UserID, newUser.Name, newUser.Email, newUser.Password, newUser.Token, newUser.Description); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getUser(newUser.UserID)
 	}
@@ -145,7 +144,7 @@ func (storage *storagePostgres) createUser(newUser *user) (*user, *goerror.Error
 }
 
 // updateUser ...
-func (storage *storagePostgres) updateUser(user *user) (*user, *goerror.ErrorData) {
+func (storage *storagePostgres) updateUser(user *user) (*user, error) {
 	if result, err := storage.conn.Get().Exec(`
 		UPDATE money.users SET 
 			name = $1, 
@@ -155,7 +154,7 @@ func (storage *storagePostgres) updateUser(user *user) (*user, *goerror.ErrorDat
 			description = $5
 		WHERE user_id = $6
 	`, user.Name, user.Email, user.Password, user.Token, user.Description, user.UserID); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getUser(user.UserID)
 	}
@@ -164,20 +163,20 @@ func (storage *storagePostgres) updateUser(user *user) (*user, *goerror.ErrorDat
 }
 
 // deleteUser ...
-func (storage *storagePostgres) deleteUser(userID string) *goerror.ErrorData {
+func (storage *storagePostgres) deleteUser(userID string) error {
 	if _, err := storage.conn.Get().Exec(`
 	    DELETE 
 		FROM money.users
 		WHERE user_id = $1
 	`, userID); err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	return nil
 }
 
 // getSessions ...
-func (storage *storagePostgres) getSessions(userID string) ([]*session, *goerror.ErrorData) {
+func (storage *storagePostgres) getSessions(userID string) ([]*session, error) {
 	rows, err := storage.conn.Get().Query(`
 	    SELECT
 			session_id,
@@ -191,7 +190,7 @@ func (storage *storagePostgres) getSessions(userID string) ([]*session, *goerror
 	`, userID)
 	defer rows.Close()
 	if err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	sessions := make([]*session, 0)
@@ -206,7 +205,7 @@ func (storage *storagePostgres) getSessions(userID string) ([]*session, *goerror
 			&session.CreatedAt); err != nil {
 
 			if err != sql.ErrNoRows {
-				return nil, goerror.NewError(err)
+				return nil, errors.New(errors.LevelError, 1, err)
 			}
 			return nil, nil
 		}
@@ -217,7 +216,7 @@ func (storage *storagePostgres) getSessions(userID string) ([]*session, *goerror
 }
 
 // getSession ...
-func (storage *storagePostgres) getSession(userID string, token string) (*session, *goerror.ErrorData) {
+func (storage *storagePostgres) getSession(userID string, token string) (*session, error) {
 	row := storage.conn.Get().QueryRow(`
 	    SELECT
 		    session_id,
@@ -238,7 +237,7 @@ func (storage *storagePostgres) getSession(userID string, token string) (*sessio
 		&session.CreatedAt); err != nil {
 
 		if err != sql.ErrNoRows {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		return nil, nil
 	}
@@ -247,12 +246,12 @@ func (storage *storagePostgres) getSession(userID string, token string) (*sessio
 }
 
 // createSession ...
-func (storage *storagePostgres) createSession(newSession *session) (*session, *goerror.ErrorData) {
+func (storage *storagePostgres) createSession(newSession *session) (*session, error) {
 	if result, err := storage.conn.Get().Exec(`
 		INSERT INTO money.sessions(session_id, user_id, original, token, description)
 		VALUES($1, $2, $3, $4, $5)
 	`, newSession.SessionID, newSession.UserID, newSession.Original, newSession.Token, newSession.Description); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getSession(newSession.UserID, newSession.Token)
 	}
@@ -261,33 +260,33 @@ func (storage *storagePostgres) createSession(newSession *session) (*session, *g
 }
 
 // deleteSession ...
-func (storage *storagePostgres) deleteSession(userID string, token string) *goerror.ErrorData {
+func (storage *storagePostgres) deleteSession(userID string, token string) error {
 	if _, err := storage.conn.Get().Exec(`
 	    DELETE 
 		FROM money.sessions
 		WHERE user_id = $1 AND token = $2
 	`, userID, token); err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	return nil
 }
 
 // deleteSessions ...
-func (storage *storagePostgres) deleteSessions(userID string) *goerror.ErrorData {
+func (storage *storagePostgres) deleteSessions(userID string) error {
 	if _, err := storage.conn.Get().Exec(`
 	    DELETE 
 		FROM money.sessions
 		WHERE user_id = $1
 	`, userID); err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	return nil
 }
 
 // getWallets ...
-func (storage *storagePostgres) getWallets(userID string) ([]*wallet, *goerror.ErrorData) {
+func (storage *storagePostgres) getWallets(userID string) ([]*wallet, error) {
 	rows, err := storage.conn.Get().Query(`
 	     SELECT
 			wallet_id,
@@ -302,7 +301,7 @@ func (storage *storagePostgres) getWallets(userID string) ([]*wallet, *goerror.E
 
 	defer rows.Close()
 	if err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	wallets := make([]*wallet, 0)
@@ -319,7 +318,7 @@ func (storage *storagePostgres) getWallets(userID string) ([]*wallet, *goerror.E
 			&wallet.CreatedAt); err != nil {
 
 			if err != sql.ErrNoRows {
-				return nil, goerror.NewError(err)
+				return nil, errors.New(errors.LevelError, 1, err)
 			}
 			return nil, nil
 		}
@@ -330,7 +329,7 @@ func (storage *storagePostgres) getWallets(userID string) ([]*wallet, *goerror.E
 }
 
 // getWallet ...
-func (storage *storagePostgres) getWallet(userID string, walletID string) (*wallet, *goerror.ErrorData) {
+func (storage *storagePostgres) getWallet(userID string, walletID string) (*wallet, error) {
 	row := storage.conn.Get().QueryRow(`
 	    SELECT
 			name,
@@ -354,7 +353,7 @@ func (storage *storagePostgres) getWallet(userID string, walletID string) (*wall
 		&wallet.CreatedAt); err != nil {
 
 		if err != sql.ErrNoRows {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		return nil, nil
 	}
@@ -363,34 +362,34 @@ func (storage *storagePostgres) getWallet(userID string, walletID string) (*wall
 }
 
 // createWallets ...
-func (storage *storagePostgres) createWallets(newWallets []*wallet) ([]*wallet, *goerror.ErrorData) {
+func (storage *storagePostgres) createWallets(newWallets []*wallet) ([]*wallet, error) {
 	tx, err := storage.conn.Get().Begin()
 	if err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	stmt, errItem := tx.Prepare(pq.CopyInSchema("money", "wallets", "wallet_id", "user_id", "name", "description", "password"))
 	if errItem != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	for _, newWallet := range newWallets {
 		if _, err := stmt.Exec(newWallet.WalletID, newWallet.UserID, newWallet.Name, newWallet.Description, newWallet.Password); err != nil {
 			tx.Rollback()
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 	}
 
 	if _, err := stmt.Exec(); err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	if err := stmt.Close(); err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	tx.Commit()
@@ -400,7 +399,7 @@ func (storage *storagePostgres) createWallets(newWallets []*wallet) ([]*wallet, 
 	for _, newWallet := range newWallets {
 		wallet, err := storage.getWallet(newWallet.UserID, newWallet.WalletID)
 		if err != nil {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		createdWallets = append(createdWallets, wallet)
 	}
@@ -409,7 +408,7 @@ func (storage *storagePostgres) createWallets(newWallets []*wallet) ([]*wallet, 
 }
 
 // updateWallet ...
-func (storage *storagePostgres) updateWallet(wallet *wallet) (*wallet, *goerror.ErrorData) {
+func (storage *storagePostgres) updateWallet(wallet *wallet) (*wallet, error) {
 	if result, err := storage.conn.Get().Exec(`
 		UPDATE money.wallets SET 
 			name = $1,
@@ -417,7 +416,7 @@ func (storage *storagePostgres) updateWallet(wallet *wallet) (*wallet, *goerror.
 			password = $3
 		WHERE user_id = $4 AND wallet_id = $5
 	`, wallet.Name, wallet.Description, wallet.Password, wallet.UserID, wallet.WalletID); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getWallet(wallet.UserID, wallet.WalletID)
 	}
@@ -426,20 +425,20 @@ func (storage *storagePostgres) updateWallet(wallet *wallet) (*wallet, *goerror.
 }
 
 // deleteWallet ...
-func (storage *storagePostgres) deleteWallet(userID string, walletID string) *goerror.ErrorData {
+func (storage *storagePostgres) deleteWallet(userID string, walletID string) error {
 	if _, err := storage.conn.Get().Exec(`
 	    DELETE 
 		FROM money.wallets
 		WHERE user_id = $1 AND wallet_id = $2
 	`, userID, walletID); err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	return nil
 }
 
 // getImages ...
-func (storage *storagePostgres) getImages(userID string) ([]*image, *goerror.ErrorData) {
+func (storage *storagePostgres) getImages(userID string) ([]*image, error) {
 	rows, err := storage.conn.Get().Query(`
 	     SELECT
 			image_id,
@@ -457,7 +456,7 @@ func (storage *storagePostgres) getImages(userID string) ([]*image, *goerror.Err
 
 	defer rows.Close()
 	if err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	images := make([]*image, 0)
@@ -477,7 +476,7 @@ func (storage *storagePostgres) getImages(userID string) ([]*image, *goerror.Err
 			&image.CreatedAt); err != nil {
 
 			if err != sql.ErrNoRows {
-				return nil, goerror.NewError(err)
+				return nil, errors.New(errors.LevelError, 1, err)
 			}
 			return nil, nil
 		}
@@ -488,7 +487,7 @@ func (storage *storagePostgres) getImages(userID string) ([]*image, *goerror.Err
 }
 
 // getImage ...
-func (storage *storagePostgres) getImage(userID string, imageID string) (*image, *goerror.ErrorData) {
+func (storage *storagePostgres) getImage(userID string, imageID string) (*image, error) {
 	row := storage.conn.Get().QueryRow(`
 	    SELECT
 			name,
@@ -518,7 +517,7 @@ func (storage *storagePostgres) getImage(userID string, imageID string) (*image,
 		&image.CreatedAt); err != nil {
 
 		if err != sql.ErrNoRows {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		return nil, nil
 	}
@@ -527,12 +526,12 @@ func (storage *storagePostgres) getImage(userID string, imageID string) (*image,
 }
 
 // createImage ...
-func (storage *storagePostgres) createImage(newImage *image) (*image, *goerror.ErrorData) {
+func (storage *storagePostgres) createImage(newImage *image) (*image, error) {
 	if result, err := storage.conn.Get().Exec(`
 		INSERT INTO money.images(image_id, user_id, name, description, url, file_name, format, raw_image)
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 	`, newImage.ImageID, newImage.UserID, newImage.Name, newImage.Description, newImage.Url, newImage.FileName, newImage.Format, newImage.RawImage); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getImage(newImage.UserID, newImage.ImageID)
 	}
@@ -540,7 +539,7 @@ func (storage *storagePostgres) createImage(newImage *image) (*image, *goerror.E
 }
 
 // updateImage ...
-func (storage *storagePostgres) updateImage(updImage *image) (*image, *goerror.ErrorData) {
+func (storage *storagePostgres) updateImage(updImage *image) (*image, error) {
 	if result, err := storage.conn.Get().Exec(`
 		UPDATE money.images SET 
 			name = $1,
@@ -551,7 +550,7 @@ func (storage *storagePostgres) updateImage(updImage *image) (*image, *goerror.E
 			raw_image = $6
 		WHERE user_id = $7 AND image_id = $8
 	`, updImage.Name, updImage.Description, updImage.Url, updImage.FileName, updImage.Format, updImage.RawImage, updImage.UserID, updImage.ImageID); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getImage(updImage.UserID, updImage.ImageID)
 	}
@@ -560,20 +559,20 @@ func (storage *storagePostgres) updateImage(updImage *image) (*image, *goerror.E
 }
 
 // deleteImage ...
-func (storage *storagePostgres) deleteImage(userID string, imageID string) *goerror.ErrorData {
+func (storage *storagePostgres) deleteImage(userID string, imageID string) error {
 	if _, err := storage.conn.Get().Exec(`
 	    DELETE 
 		FROM money.images
 		WHERE user_id = $1 AND image_id = $2
 	`, userID, imageID); err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	return nil
 }
 
 // getCategories ...
-func (storage *storagePostgres) getCategories(userID string) ([]*category, *goerror.ErrorData) {
+func (storage *storagePostgres) getCategories(userID string) ([]*category, error) {
 	rows, err := storage.conn.Get().Query(`
 	     SELECT
 			category_id,
@@ -588,7 +587,7 @@ func (storage *storagePostgres) getCategories(userID string) ([]*category, *goer
 
 	defer rows.Close()
 	if err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	categories := make([]*category, 0)
@@ -605,7 +604,7 @@ func (storage *storagePostgres) getCategories(userID string) ([]*category, *goer
 			&category.CreatedAt); err != nil {
 
 			if err != sql.ErrNoRows {
-				return nil, goerror.NewError(err)
+				return nil, errors.New(errors.LevelError, 1, err)
 			}
 			return nil, nil
 		}
@@ -616,7 +615,7 @@ func (storage *storagePostgres) getCategories(userID string) ([]*category, *goer
 }
 
 // getCategory ...
-func (storage *storagePostgres) getCategory(userID string, categoryID string) (*category, *goerror.ErrorData) {
+func (storage *storagePostgres) getCategory(userID string, categoryID string) (*category, error) {
 	row := storage.conn.Get().QueryRow(`
 	    SELECT
 			image_id,
@@ -640,7 +639,7 @@ func (storage *storagePostgres) getCategory(userID string, categoryID string) (*
 		&category.CreatedAt); err != nil {
 
 		if err != sql.ErrNoRows {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		return nil, nil
 	}
@@ -649,34 +648,34 @@ func (storage *storagePostgres) getCategory(userID string, categoryID string) (*
 }
 
 // createCategories ...
-func (storage *storagePostgres) createCategories(newCategories []*category) ([]*category, *goerror.ErrorData) {
+func (storage *storagePostgres) createCategories(newCategories []*category) ([]*category, error) {
 	tx, err := storage.conn.Get().Begin()
 	if err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	stmt, errItem := tx.Prepare(pq.CopyInSchema("money", "categories", "category_id", "user_id", "image_id", "name", "description"))
 	if errItem != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	for _, newCategory := range newCategories {
 		if _, err := stmt.Exec(newCategory.CategoryID, newCategory.UserID, newCategory.ImageID, newCategory.Name, newCategory.Description); err != nil {
 			tx.Rollback()
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 	}
 
 	if _, err := stmt.Exec(); err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	if err := stmt.Close(); err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	tx.Commit()
@@ -686,7 +685,7 @@ func (storage *storagePostgres) createCategories(newCategories []*category) ([]*
 	for _, newCategory := range newCategories {
 		category, err := storage.getCategory(newCategory.UserID, newCategory.CategoryID)
 		if err != nil {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		createdCategories = append(createdCategories, category)
 	}
@@ -695,7 +694,7 @@ func (storage *storagePostgres) createCategories(newCategories []*category) ([]*
 }
 
 // updateCategory ...
-func (storage *storagePostgres) updateCategory(category *category) (*category, *goerror.ErrorData) {
+func (storage *storagePostgres) updateCategory(category *category) (*category, error) {
 	if result, err := storage.conn.Get().Exec(`
 		UPDATE money.categories SET 
 			image_id = $1
@@ -703,7 +702,7 @@ func (storage *storagePostgres) updateCategory(category *category) (*category, *
 			description = $3,
 		WHERE user_id = $4 AND category_id = $5
 	`, category.ImageID, category.Name, category.Description, category.UserID, category.CategoryID); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getCategory(category.UserID, category.CategoryID)
 	}
@@ -712,20 +711,20 @@ func (storage *storagePostgres) updateCategory(category *category) (*category, *
 }
 
 // deleteCategory ...
-func (storage *storagePostgres) deleteCategory(userID string, categoryID string) *goerror.ErrorData {
+func (storage *storagePostgres) deleteCategory(userID string, categoryID string) error {
 	if _, err := storage.conn.Get().Exec(`
 	    DELETE 
 		FROM money.categories
 		WHERE user_id = $1 AND category_id = $2
 	`, userID, categoryID); err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	return nil
 }
 
 // getTransactions ...
-func (storage *storagePostgres) getTransactions(userID string) ([]*transaction, *goerror.ErrorData) {
+func (storage *storagePostgres) getTransactions(userID string) ([]*transaction, error) {
 	rows, err := storage.conn.Get().Query(`
 	     SELECT
 			wallet_id,
@@ -742,7 +741,7 @@ func (storage *storagePostgres) getTransactions(userID string) ([]*transaction, 
 
 	defer rows.Close()
 	if err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	transactions := make([]*transaction, 0)
@@ -761,7 +760,7 @@ func (storage *storagePostgres) getTransactions(userID string) ([]*transaction, 
 			&transaction.CreatedAt); err != nil {
 
 			if err != sql.ErrNoRows {
-				return nil, goerror.NewError(err)
+				return nil, errors.New(errors.LevelError, 1, err)
 			}
 			return nil, nil
 		}
@@ -772,7 +771,7 @@ func (storage *storagePostgres) getTransactions(userID string) ([]*transaction, 
 }
 
 // getTransaction ...
-func (storage *storagePostgres) getTransaction(userID string, walletID string, transactionID string) (*transaction, *goerror.ErrorData) {
+func (storage *storagePostgres) getTransaction(userID string, walletID string, transactionID string) (*transaction, error) {
 	row := storage.conn.Get().QueryRow(`
 	    SELECT
 			category_id,
@@ -799,7 +798,7 @@ func (storage *storagePostgres) getTransaction(userID string, walletID string, t
 		&transaction.CreatedAt); err != nil {
 
 		if err != sql.ErrNoRows {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		return nil, nil
 	}
@@ -808,34 +807,34 @@ func (storage *storagePostgres) getTransaction(userID string, walletID string, t
 }
 
 // createTransactions ...
-func (storage *storagePostgres) createTransactions(newTransactions []*transaction) ([]*transaction, *goerror.ErrorData) {
+func (storage *storagePostgres) createTransactions(newTransactions []*transaction) ([]*transaction, error) {
 	tx, err := storage.conn.Get().Begin()
 	if err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	stmt, errItem := tx.Prepare(pq.CopyInSchema("money", "transactions", "transaction_id", "user_id", "wallet_id", "category_id", "price", "description", "date"))
 	if errItem != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	for _, newTransaction := range newTransactions {
 		if _, err := stmt.Exec(newTransaction.TransactionID, newTransaction.UserID, newTransaction.WalletID, newTransaction.CategoryID, newTransaction.Price, newTransaction.Description, newTransaction.Date); err != nil {
 			tx.Rollback()
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 	}
 
 	if _, err := stmt.Exec(); err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	if err := stmt.Close(); err != nil {
 		tx.Rollback()
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	}
 
 	tx.Commit()
@@ -845,7 +844,7 @@ func (storage *storagePostgres) createTransactions(newTransactions []*transactio
 	for _, newTransaction := range newTransactions {
 		transaction, err := storage.getTransaction(newTransaction.UserID, newTransaction.WalletID, newTransaction.TransactionID)
 		if err != nil {
-			return nil, goerror.NewError(err)
+			return nil, errors.New(errors.LevelError, 1, err)
 		}
 		createdTransactions = append(createdTransactions, transaction)
 	}
@@ -854,7 +853,7 @@ func (storage *storagePostgres) createTransactions(newTransactions []*transactio
 }
 
 // updateTransaction ...
-func (storage *storagePostgres) updateTransaction(transaction *transaction) (*transaction, *goerror.ErrorData) {
+func (storage *storagePostgres) updateTransaction(transaction *transaction) (*transaction, error) {
 	if result, err := storage.conn.Get().Exec(`
 		UPDATE money.transactions SET 
 			category_id = $1, 
@@ -863,7 +862,7 @@ func (storage *storagePostgres) updateTransaction(transaction *transaction) (*tr
 		  	date = $4
 		WHERE user_id = $5 AND wallet_id = $6 AND transaction_id = $7
 	`, transaction.CategoryID, transaction.Price, transaction.Description, transaction.Date, transaction.UserID, transaction.WalletID, transaction.TransactionID); err != nil {
-		return nil, goerror.NewError(err)
+		return nil, errors.New(errors.LevelError, 1, err)
 	} else if rows, _ := result.RowsAffected(); rows > 0 {
 		return storage.getTransaction(transaction.UserID, transaction.WalletID, transaction.TransactionID)
 	}
@@ -872,13 +871,13 @@ func (storage *storagePostgres) updateTransaction(transaction *transaction) (*tr
 }
 
 // deleteTransaction ...
-func (storage *storagePostgres) deleteTransaction(userID string, walletID string, transactionID string) *goerror.ErrorData {
+func (storage *storagePostgres) deleteTransaction(userID string, walletID string, transactionID string) error {
 	if _, err := storage.conn.Get().Exec(`
 	    DELETE 
 		FROM money.transactions
 		WHERE user_id = $1 AND wallet_id = $2 AND transaction_id = $3
 	`, userID, walletID, transactionID); err != nil {
-		return goerror.NewError(err)
+		return errors.New(errors.LevelError, 1, err)
 	}
 
 	return nil
