@@ -17,12 +17,12 @@ package gomoney
 
 import (
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/joaosoft/manager"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/joaosoft/errors"
 	"github.com/joaosoft/validator"
 	"github.com/labstack/echo"
 	"github.com/shopspring/decimal"
@@ -55,13 +55,13 @@ func (m *Money) newApiWeb(host string, interactor *interactor) *apiWeb {
 		client:     m.pm.NewSimpleWebEcho(host),
 	}
 
-	webApi.registerRoutes()
+	webApi.registerRoutes(m)
 
 	return webApi
 }
 
-func (api *apiWeb) registerRoutes() error {
-	api.client = manager.NewSimpleWebEcho(api.host)
+func (api *apiWeb) registerRoutes(m *Money) error {
+	api.client = m.pm.NewSimpleWebEcho(api.host)
 	api.auth = api.authenticate()
 
 	api.registerRoutesForUsers()
@@ -83,10 +83,9 @@ func (api *apiWeb) authenticate() echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			request := authenticateRequest{UserID: ctx.Param("user_id")}
 			if err := validator.Validate(request); err != nil {
-				newErr := errors.NewError(err)
-				log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-					Error("error when validating body request").ToErrorData(newErr)
-				return ctx.JSON(http.StatusNetworkAuthenticationRequired, errorResponse{Code: http.StatusNetworkAuthenticationRequired, Message: newErr.Error(), Cause: newErr.Cause()})
+				log.WithFields(map[string]interface{}{"error": err}).
+					Error("error when validating body request")
+				return ctx.JSON(http.StatusNetworkAuthenticationRequired, errorResponse{Code: http.StatusNetworkAuthenticationRequired, Message: err[0].Error(), Cause: ""})
 			}
 
 			sessionKeyValue := ctx.Request().Header.Get(session_key)
@@ -94,13 +93,12 @@ func (api *apiWeb) authenticate() echo.MiddlewareFunc {
 
 			token, err := jwt.Parse(sessionKeyValue, func(token *jwt.Token) (interface{}, error) {
 				if session, err := api.interactor.getSession(request.UserID, sessionKeyValue); err != nil {
-					log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-						Error("error getting session").ToErrorData(err)
+					log.WithFields(map[string]interface{}{"error": err}).
+						Error("error when validating body request")
 					return nil, err
 				} else if session == nil {
-					var err error
-					log.WithFields(map[string]interface{}{"error": err.Error()}).
-						Error("unexisting session").ToError(&err)
+					log.WithFields(map[string]interface{}{"error": err}).
+						Error("error when validating body request")
 					return nil, err
 				} else {
 					return []byte(session.Original), nil
@@ -187,7 +185,7 @@ func (api *apiWeb) registerRoutesForUsers() error {
 //			 500:
 func (api *apiWeb) getUsersHandler(ctx echo.Context) error {
 	if users, err := api.interactor.getUsers(); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if users == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -231,14 +229,13 @@ func (api *apiWeb) getUsersHandler(ctx echo.Context) error {
 func (api *apiWeb) getUserHandler(ctx echo.Context) error {
 	request := getUserRequest{UserID: ctx.Param("user_id")}
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if user, err := api.interactor.getUser(request.UserID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if user == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -276,17 +273,15 @@ func (api *apiWeb) getUserHandler(ctx echo.Context) error {
 func (api *apiWeb) createUserHandler(ctx echo.Context) error {
 	request := createUserRequest{}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if createdUser, err := api.interactor.createUser(
@@ -296,7 +291,7 @@ func (api *apiWeb) createUserHandler(ctx echo.Context) error {
 			Password:    request.Body.Password,
 			Description: request.Body.Description,
 		}); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if createdUser == nil {
 		return ctx.NoContent(http.StatusInternalServerError)
 	} else {
@@ -334,17 +329,15 @@ func (api *apiWeb) createUserHandler(ctx echo.Context) error {
 func (api *apiWeb) updateUserHandler(ctx echo.Context) error {
 	request := updateUserRequest{UserID: ctx.Param("user_id")}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if updatedUser, err := api.interactor.updateUser(
@@ -355,7 +348,7 @@ func (api *apiWeb) updateUserHandler(ctx echo.Context) error {
 			Password:    request.Body.Password,
 			Description: request.Body.Description,
 		}); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if updatedUser == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -392,14 +385,13 @@ func (api *apiWeb) updateUserHandler(ctx echo.Context) error {
 func (api *apiWeb) deleteUserHandler(ctx echo.Context) error {
 	request := deleteUserRequest{UserID: ctx.Param("user_id")}
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if err := api.interactor.deleteUser(request.UserID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		return ctx.NoContent(http.StatusOK)
 	}
@@ -450,46 +442,41 @@ func (api *apiWeb) registerRoutesForSessions() error {
 func (api *apiWeb) createSessionHandler(ctx echo.Context) error {
 	request := createSessionRequest{}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if user, err := api.interactor.getUserByEmail(request.Body.Email); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Errorf("error getting user by email %s", request.Body.Email).ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+			Errorf("error getting user by email %s", request.Body.Email)
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	} else {
 		passwordToken, err := generateToken(authentication, []byte(request.Body.Password))
 		if err != nil {
-			newErr := errors.NewError(err)
-			log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-				Error("error when comparing password").ToErrorData(newErr)
-			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: newErr.Error(), Cause: newErr.Cause()})
+			log.WithFields(map[string]interface{}{"error": err}).
+				Error("error when comparing password")
+			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 		}
 
 		if user.Token != passwordToken {
-			newErr := errors.FromString(fmt.Sprintf("invalid password expected: %s, given: %s", user.Token, passwordToken))
-			log.WithFields(map[string]interface{}{}).Error(newErr.Error())
-			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+			log.WithFields(map[string]interface{}{}).Error(err)
+			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 		}
 
 		if createdSession, err := api.interactor.createSession(&session{
 			UserID:      user.UserID,
 			Description: request.Body.Description,
 		}); err != nil {
-			log.WithFields(map[string]interface{}{"error": err.Error(), "cause": err.Cause()}).
-				Error("error when creating session").ToErrorData(err)
-			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+			log.WithFields(map[string]interface{}{"error": err.Error(), "cause": ""}).
+				Error("error when creating session")
+			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 		} else if createdSession == nil {
 			return ctx.NoContent(http.StatusInternalServerError)
 		} else {
@@ -528,22 +515,20 @@ func (api *apiWeb) deleteSessionHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	token := ctx.Request().Header.Get(session_key)
 
 	if user, err := api.interactor.getUserByEmail(request.Email); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Errorf("error getting user by email %s", request.Email).ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Errorf("error getting user by email %s", request.Email)
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	} else {
 		if err := api.interactor.deleteSession(user.UserID, token); err != nil {
-			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 		} else {
 			return ctx.NoContent(http.StatusOK)
 		}
@@ -556,14 +541,13 @@ func (api *apiWeb) deleteSessionsHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if err := api.interactor.deleteSessions(request.UserID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		return ctx.NoContent(http.StatusOK)
 	}
@@ -626,14 +610,13 @@ func (api *apiWeb) getWalletsHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if wallets, err := api.interactor.getWallets(request.UserID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if wallets == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -661,14 +644,13 @@ func (api *apiWeb) getWalletHandler(ctx echo.Context) error {
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if wallet, err := api.interactor.getWallet(request.UserID, request.WalletID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if wallet == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -691,17 +673,15 @@ func (api *apiWeb) createWalletsHandler(ctx echo.Context) error {
 	wallets := make([]*wallet, 0)
 
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	for _, item := range request.Body {
@@ -714,7 +694,7 @@ func (api *apiWeb) createWalletsHandler(ctx echo.Context) error {
 	}
 
 	if createdWallets, err := api.interactor.createWallets(wallets); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		walletsResponse := make([]*walletResponse, 0)
 
@@ -740,17 +720,15 @@ func (api *apiWeb) updateWalletHandler(ctx echo.Context) error {
 		WalletID: ctx.Param("wallet_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if updatedWallet, err := api.interactor.updateWallet(
@@ -761,7 +739,7 @@ func (api *apiWeb) updateWalletHandler(ctx echo.Context) error {
 			Description: request.Body.Description,
 			Password:    request.Body.Password,
 		}); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if updatedWallet == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -783,14 +761,13 @@ func (api *apiWeb) deleteWalletHandler(ctx echo.Context) error {
 		WalletID: ctx.Param("wallet_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := api.interactor.deleteWallet(request.UserID, request.WalletID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		return ctx.NoContent(http.StatusOK)
 	}
@@ -853,7 +830,7 @@ func (api *apiWeb) getCategoriesHandler(ctx echo.Context) error {
 	}
 
 	if categories, err := api.interactor.getCategories(request.UserID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if categories == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -882,7 +859,7 @@ func (api *apiWeb) getCategoryHandler(ctx echo.Context) error {
 	}
 
 	if category, err := api.interactor.getCategory(request.UserID, request.CategoryID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if category == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -906,17 +883,15 @@ func (api *apiWeb) createCategoriesHandler(ctx echo.Context) error {
 	categories := make([]*category, 0)
 
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+			Error("error getting body")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	for _, item := range request.Body {
@@ -929,7 +904,7 @@ func (api *apiWeb) createCategoriesHandler(ctx echo.Context) error {
 	}
 
 	if createdCategories, err := api.interactor.createCategories(categories); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		categoriesResponse := make([]*categoryResponse, 0)
 
@@ -955,17 +930,15 @@ func (api *apiWeb) updateCategoryHandler(ctx echo.Context) error {
 		CategoryID: ctx.Param("category_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if updatedCategory, err := api.interactor.updateCategory(
@@ -975,7 +948,7 @@ func (api *apiWeb) updateCategoryHandler(ctx echo.Context) error {
 			Name:        request.Body.Name,
 			Description: request.Body.Description,
 		}); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if updatedCategory == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -998,7 +971,7 @@ func (api *apiWeb) deleteCategoryHandler(ctx echo.Context) error {
 	}
 
 	if err := api.interactor.deleteCategory(request.UserID, request.CategoryID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		return ctx.NoContent(http.StatusOK)
 	}
@@ -1074,7 +1047,7 @@ func (api *apiWeb) getImagesHandler(ctx echo.Context) error {
 	}
 
 	if images, err := api.interactor.getImages(request.UserID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if images == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -1106,7 +1079,7 @@ func (api *apiWeb) getImageHandler(ctx echo.Context) error {
 	}
 
 	if image, err := api.interactor.getImage(request.UserID, request.ImageID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if image == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -1133,7 +1106,7 @@ func (api *apiWeb) getImageRawHandler(ctx echo.Context) error {
 	}
 
 	if rawImage, err := api.interactor.getImageRaw(request.UserID, request.ImageID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if rawImage == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -1157,22 +1130,19 @@ func (api *apiWeb) createImageHandler(ctx echo.Context) error {
 	request.Body.ImageKey = "image"
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if downloads, err := download(request.Body.ImageKey, ctx); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error uploading images").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+			Error("error uploading images")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	} else {
 		if len(downloads) == 0 {
-			newErr := errors.FromString("there is no file in the request")
-			log.Error(newErr.Error())
-			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+			log.Error(err)
+			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 		}
 
 		format := strings.Split(downloads[0].FileName, ".")[1]
@@ -1188,7 +1158,7 @@ func (api *apiWeb) createImageHandler(ctx echo.Context) error {
 		}
 
 		if createdImage, err := api.interactor.createImage(image); err != nil {
-			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 		} else {
 			return ctx.JSON(http.StatusCreated, &imageResponse{
 				ImageID:     createdImage.ImageID,
@@ -1219,22 +1189,19 @@ func (api *apiWeb) updateImageHandler(ctx echo.Context) error {
 	request.Body.ImageKey = ctx.FormValue("image_key")
 
 	if err := validator.Validate(request); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	if downloads, err := download(request.Body.ImageKey, ctx); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error uploading images").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+			Error("error uploading images")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	} else {
 		if len(downloads) == 0 {
-			newErr := errors.FromString("there is no file in the request")
-			log.Error(newErr.Error())
-			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+			log.Error(err)
+			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 		}
 
 		format := strings.Split(downloads[0].FileName, ".")[1]
@@ -1251,7 +1218,7 @@ func (api *apiWeb) updateImageHandler(ctx echo.Context) error {
 		}
 
 		if updatedImage, err := api.interactor.updateImage(image); err != nil {
-			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+			return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 		} else if updatedImage == nil {
 			return ctx.NoContent(http.StatusNotFound)
 		} else {
@@ -1278,7 +1245,7 @@ func (api *apiWeb) deleteImageHandler(ctx echo.Context) error {
 	}
 
 	if err := api.interactor.deleteImage(request.UserID, request.ImageID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		return ctx.NoContent(http.StatusOK)
 	}
@@ -1350,7 +1317,7 @@ func (api *apiWeb) getTransactionsHandler(ctx echo.Context) error {
 	}
 
 	if transactions, err := api.interactor.getTransactions(request.UserID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if transactions == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -1382,7 +1349,7 @@ func (api *apiWeb) getTransactionHandler(ctx echo.Context) error {
 	}
 
 	if transaction, err := api.interactor.getTransaction(request.UserID, request.WalletID, request.TransactionID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if transaction == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -1409,28 +1376,25 @@ func (api *apiWeb) createTransactionsHandler(ctx echo.Context) error {
 	transactions := make([]*transaction, 0)
 
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	for _, item := range request.Body {
 		if err := validator.Validate(item); err != nil {
-			newErr := errors.NewError(err)
-			log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-				Error("error when validating body request").ToErrorData(newErr)
-			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+			log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+				Error("error when validating body request")
+			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 		}
 	}
 
 	for _, item := range request.Body {
 		date, err := time.Parse(time.RFC3339, item.Date)
 		if err != nil {
-			newErr := errors.NewError(err)
-			log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-				Error("error getting date").ToErrorData(newErr)
-			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+			log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+				Error("error getting date")
+			return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 		}
 
 		price, err := decimal.NewFromString(item.Price)
@@ -1446,7 +1410,7 @@ func (api *apiWeb) createTransactionsHandler(ctx echo.Context) error {
 	}
 
 	if createdTransactions, err := api.interactor.createTransactions(transactions); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		transactionsResponse := make([]*transactionResponse, 0)
 
@@ -1475,33 +1439,29 @@ func (api *apiWeb) updateTransactionHandler(ctx echo.Context) error {
 		TransactionID: ctx.Param("transaction_id"),
 	}
 	if err := ctx.Bind(&request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting body").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if err := validator.Validate(request.Body); err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error when validating body request").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err}).
+			Error("error when validating body request")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err[0].Error(), Cause: ""})
 	}
 
 	price, err := decimal.NewFromString(request.Body.Price)
 	if err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting price").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+			Error("error getting price")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	date, err := time.Parse(time.RFC3339, request.Body.Date)
 	if err != nil {
-		newErr := errors.NewError(err)
-		log.WithFields(map[string]interface{}{"error": newErr.Error(), "cause": newErr.Cause()}).
-			Error("error getting date").ToErrorData(newErr)
-		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: newErr.Error(), Cause: newErr.Cause()})
+		log.WithFields(map[string]interface{}{"error": err, "cause": ""}).
+			Error("error getting date")
+		return ctx.JSON(http.StatusBadRequest, errorResponse{Code: http.StatusBadRequest, Message: err.Error(), Cause: ""})
 	}
 
 	if updatedTransaction, err := api.interactor.updateTransaction(
@@ -1514,7 +1474,7 @@ func (api *apiWeb) updateTransactionHandler(ctx echo.Context) error {
 			Description:   request.Body.Description,
 			Date:          date,
 		}); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else if updatedTransaction == nil {
 		return ctx.NoContent(http.StatusNotFound)
 	} else {
@@ -1540,7 +1500,7 @@ func (api *apiWeb) deleteTransactionHandler(ctx echo.Context) error {
 	}
 
 	if err := api.interactor.deleteTransaction(request.UserID, request.WalletID, request.TransactionID); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: err.Cause()})
+		return ctx.JSON(http.StatusInternalServerError, errorResponse{Code: http.StatusInternalServerError, Message: err.Error(), Cause: ""})
 	} else {
 		return ctx.NoContent(http.StatusOK)
 	}
